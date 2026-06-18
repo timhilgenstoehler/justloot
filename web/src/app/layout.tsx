@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: '/social.png',
+        url: 'https://justloot.vercel.app/social.png',
         width: 1200,
         height: 600,
         alt: 'Just Loot — No Quests. No Story. Just Loot.',
