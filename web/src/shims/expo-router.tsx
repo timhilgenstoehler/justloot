@@ -3,6 +3,7 @@
 import {
   useRouter as useNextRouter,
   usePathname,
+  useParams,
   useSearchParams,
 } from 'next/navigation';
 import { useEffect, useMemo } from 'react';
@@ -38,17 +39,28 @@ export function useRouter(): Router {
   );
 }
 
+export { usePathname };
+
 export function useLocalSearchParams<
   T extends Record<string, string | undefined> = Record<string, string | undefined>,
 >(): T {
-  const params = useSearchParams();
+  const routeParams = useParams();
+  const searchParams = useSearchParams();
+
   return useMemo(() => {
     const result: Record<string, string | undefined> = {};
-    params.forEach((value, key) => {
+
+    for (const [key, value] of Object.entries(routeParams)) {
+      if (value === undefined) continue;
+      result[key] = Array.isArray(value) ? value[0] : value;
+    }
+
+    searchParams.forEach((value, key) => {
       result[key] = value;
     });
+
     return result as T;
-  }, [params]);
+  }, [routeParams, searchParams]);
 }
 
 export function Redirect({ href }: { href: string }) {

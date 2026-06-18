@@ -15,6 +15,7 @@ interface ItemDetailModalProps {
   item: Item | InventoryItem | null;
   mode: ItemDetailMode;
   equippedSlot?: Slot;
+  readOnly?: boolean;
   onClose: () => void;
 }
 
@@ -26,7 +27,7 @@ function formatDate(ts: number): string {
   });
 }
 
-export function ItemDetailModal({ item, mode, equippedSlot, onClose }: ItemDetailModalProps) {
+export function ItemDetailModal({ item, mode, equippedSlot, readOnly = false, onClose }: ItemDetailModalProps) {
   const router = useRouter();
   const equipment = useGameStore((s) => s.equipment);
   const inventory = useGameStore((s) => s.inventory);
@@ -49,6 +50,7 @@ export function ItemDetailModal({ item, mode, equippedSlot, onClose }: ItemDetai
   const canDelete = invItem ? canDeleteItem(invItem, equipment) : false;
 
   const handleOpen = () => {
+    if (readOnly) return;
     markCollectionViewed(getItemFingerprint(item));
   };
 
@@ -142,7 +144,7 @@ export function ItemDetailModal({ item, mode, equippedSlot, onClose }: ItemDetai
           </ScrollView>
 
           <View style={styles.actions}>
-            {mode === 'inventory' && (
+            {!readOnly && mode === 'inventory' && (
               <>
                 <Pressable
                   style={({ pressed }) => [styles.actionBtn, styles.equipBtn, pressed && styles.pressed]}
@@ -169,7 +171,7 @@ export function ItemDetailModal({ item, mode, equippedSlot, onClose }: ItemDetai
                 </Pressable>
               </>
             )}
-            {mode === 'equipped' && equippedSlot && (
+            {!readOnly && mode === 'equipped' && equippedSlot && (
               <Pressable
                 style={({ pressed }) => [styles.actionBtn, pressed && styles.pressed]}
                 onPress={handleUnequip}

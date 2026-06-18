@@ -40,15 +40,23 @@ export default function LeaderboardScreen() {
               <Text style={styles.meta}>Power {entry.powerScore} · Depth {entry.depth}</Text>
             </View>
             <Text style={styles.rating}>{entry.arenaRating}</Text>
-            {!entry.isPlayer && (
+            <View style={styles.rowActions}>
               <Pressable
-                style={({ pressed }) => [styles.fightBtn, pressed && styles.fightPressed, disabled && styles.disabled]}
-                onPress={() => router.push(`/arena?opponent=${entry.id}`)}
-                disabled={disabled}
+                style={({ pressed }) => [styles.inspectBtn, pressed && styles.btnPressed]}
+                onPress={() => router.push(`/inspect/${entry.id}`)}
               >
-                <Text style={styles.fightText}>Fight</Text>
+                <Text style={styles.inspectText}>Inspect</Text>
               </Pressable>
-            )}
+              {!entry.isPlayer && (
+                <Pressable
+                  style={({ pressed }) => [styles.fightBtn, pressed && styles.btnPressed, disabled && styles.disabled]}
+                  onPress={() => router.push(`/arena?opponent=${entry.id}`)}
+                  disabled={disabled}
+                >
+                  <Text style={styles.fightText}>Fight</Text>
+                </Pressable>
+              )}
+            </View>
           </View>
         ))}
 
@@ -92,17 +100,36 @@ const styles = StyleSheet.create({
   name: { fontSize: 14, color: colors.textPrimary, fontWeight: '600' },
   playerName: { color: colors.cta },
   meta: { fontSize: 10, color: colors.textMuted, marginTop: 2 },
-  rating: { fontSize: 16, fontWeight: '600', color: colors.cta, marginRight: 8, minWidth: 44, textAlign: 'right' },
+  rating: { fontSize: 16, fontWeight: '600', color: colors.cta, marginRight: 8, minWidth: 40, textAlign: 'right' },
+  rowActions: {
+    flexDirection: 'row',
+    gap: 6,
+    alignItems: 'center',
+  },
+  inspectBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: colors.surfaceBorder,
+    backgroundColor: '#121218',
+  },
+  inspectText: {
+    fontSize: 10,
+    color: colors.textMuted,
+    letterSpacing: 0.8,
+    fontWeight: '700',
+  },
   fightBtn: {
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
     paddingVertical: 6,
     borderRadius: 4,
     borderWidth: 1,
     borderColor: colors.cta,
   },
-  fightPressed: { opacity: 0.8 },
+  btnPressed: { opacity: 0.8 },
   disabled: { opacity: 0.4 },
-  fightText: { fontSize: 10, color: colors.cta, letterSpacing: 1, fontWeight: '700' },
+  fightText: { fontSize: 10, color: colors.cta, letterSpacing: 0.8, fontWeight: '700' },
   feed: { marginTop: 32 },
   feedTitle: {
     fontSize: 11,

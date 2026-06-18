@@ -37,7 +37,8 @@ export function EquipmentColumn({ slots, equipment, align, onItemPress }: Equipm
 
 const styles = StyleSheet.create({
   column: {
-    alignItems: 'flex-start',
+    flexShrink: 0,
+    alignItems: 'center',
   },
   columnRight: {
     alignItems: 'flex-end',

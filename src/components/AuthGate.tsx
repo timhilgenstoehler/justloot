@@ -1,6 +1,7 @@
 import { useEffect, type ReactNode } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useCloudSync } from '../hooks/useCloudSync';
+import { useAnalytics } from '../hooks/useAnalytics';
 import { colors } from '../constants/theme';
 import { useAuthStore } from '../store/authStore';
 import { LoginScreen } from './LoginScreen';
@@ -18,6 +19,7 @@ export function AuthGate({ children }: AuthGateProps) {
   const signOut = useAuthStore((s) => s.signOut);
 
   useCloudSync();
+  useAnalytics(session?.user?.id);
 
   useEffect(() => {
     initialize();

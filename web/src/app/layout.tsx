@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Providers } from '@/components/Providers';
+import { AppShell } from '@/components/AppShell';
 import './globals.css';
 
 export const dynamic = 'force-dynamic';
@@ -49,7 +50,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body>
         <Providers>
-          <div className="phone-shell">{children}</div>
+          <AppShell>{children}</AppShell>
         </Providers>
       </body>
     </html>

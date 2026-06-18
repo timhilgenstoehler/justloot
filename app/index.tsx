@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ItemDetailModal } from '../src/components/ItemDetailModal';
 import { NavRow } from '../src/components/NavRow';
+import { CharacterStatsPanel } from '../src/components/CharacterStatsPanel';
 import { DepthSelector } from '../src/components/DepthSelector';
 import { EquipmentColumn } from '../src/components/EquipmentColumn';
 import { PowerHeader } from '../src/components/PowerHeader';
@@ -42,8 +43,6 @@ export default function CharacterScreen() {
         maxUnlockedDepth={depth}
         powerScore={powerScore}
         combatStats={combatStats}
-        combatEffects={loadout.effects}
-        combatResists={loadout.resists}
         arenaRating={arenaRating}
         dust={dust}
       />
@@ -59,6 +58,12 @@ export default function CharacterScreen() {
             const slot = LEFT_SLOTS.find((s) => equipment[s.id]?.id === item.id)?.id;
             if (slot) setDetailItem({ item, slot });
           }}
+        />
+        <CharacterStatsPanel
+          stats={combatStats}
+          effects={loadout.effects}
+          resists={loadout.resists}
+          build={loadout.build}
         />
         <EquipmentColumn
           slots={RIGHT_SLOTS}
@@ -99,10 +104,10 @@ const styles = StyleSheet.create({
   characterArea: {
     flex: 1,
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: SCREEN_PADDING,
     minHeight: 0,
+    gap: 6,
   },
   footer: {
     paddingBottom: 6,

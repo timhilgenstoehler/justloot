@@ -1,5 +1,6 @@
 'use client';
 
+import { usePathname } from 'next/navigation';
 import { useEffect, useState, type ReactNode } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { AuthGate } from '../../../src/components/AuthGate';
@@ -8,6 +9,8 @@ import { useGameStore } from '../../../src/store/gameStore';
 import { colors } from '../../../src/constants/theme';
 
 export function Providers({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  const isStatsRoute = pathname?.startsWith('/stats');
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
@@ -22,6 +25,10 @@ export function Providers({ children }: { children: ReactNode }) {
 
     return unsub;
   }, []);
+
+  if (isStatsRoute) {
+    return <>{children}</>;
+  }
 
   return (
     <SafeAreaProvider>

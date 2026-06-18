@@ -19,6 +19,7 @@ export default function RootLayout() {
         <Stack.Screen name="arena" />
         <Stack.Screen name="collection" />
         <Stack.Screen name="leaderboard" />
+        <Stack.Screen name="inspect/[userId]" />
         <Stack.Screen
           name="comparison"
           options={{

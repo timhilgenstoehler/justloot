@@ -9,6 +9,7 @@ import {
   getLeaderboardEntryById,
   postFeedEntry,
 } from '../services/leaderboardService';
+import { trackRunStarted } from '../services/analyticsService';
 import { getCurrentUserId } from '../lib/session';
 import { opponentFromLeaderboardEntry } from '../systems/leaderboardSystem';
 import { simulateCombat } from '../systems/combatSimulator';
@@ -268,6 +269,7 @@ export const useGameStore = create<GameStore>()(
           runBuildState: { ...loadout.build },
           equippedLootBonuses: loadout.lootBonuses,
         });
+        trackRunStarted();
       },
 
       startArenaRun: (opponentId: string) => {
@@ -298,6 +300,7 @@ export const useGameStore = create<GameStore>()(
           arenaOpponentRating: opponent.arenaRating,
           arenaOpponentId: opponentId,
         });
+        trackRunStarted();
       },
 
       ensureLeaderboardReady: () => {

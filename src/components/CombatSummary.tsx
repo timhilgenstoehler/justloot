@@ -61,12 +61,6 @@ export function CombatSummary({ result, variant, lastDefeatDust }: CombatSummary
       <Text style={[styles.statLine, styles.statGap]}>Damage Taken:</Text>
       <Text style={styles.statValue}>{result.damageTaken}</Text>
 
-      {!isVictory && lastDefeatDust !== null && lastDefeatDust !== undefined && lastDefeatDust > 0 && (
-        <>
-          <View style={styles.divider} />
-          <Text style={styles.dust}>+{lastDefeatDust} Dust</Text>
-        </>
-      )}
 
       {topContributors.length > 0 && (
         <>

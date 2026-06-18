@@ -46,7 +46,7 @@ export default function ArenaScreen() {
         <Text style={styles.recordText}>{arenaWins}W · {arenaLosses}L</Text>
       </View>
 
-      <Text style={styles.desc}>Choose an opponent from the leaderboard. Win to gain rating and dust.</Text>
+      <Text style={styles.desc}>Choose an opponent. Win to gain rating.</Text>
 
       <ScrollView style={styles.list} showsVerticalScrollIndicator={false}>
         {opponents.length === 0 && (
