@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -10,10 +11,22 @@ import {
   View,
 } from 'react-native';
 import { colors } from '../constants/theme';
+import { lootLogo } from '../constants/lootLogo';
 import { isSupabaseConfigured } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 
 type AuthMode = 'signin' | 'signup';
+
+function LoginLogo() {
+  return (
+    <Image
+      source={lootLogo}
+      style={styles.logo}
+      resizeMode="contain"
+      accessibilityLabel="Just Loot"
+    />
+  );
+}
 
 export function LoginScreen() {
   const [mode, setMode] = useState<AuthMode>('signin');
@@ -41,7 +54,7 @@ export function LoginScreen() {
   if (!isSupabaseConfigured()) {
     return (
       <View style={styles.container}>
-        <Text style={styles.title}>Just Loot</Text>
+        <LoginLogo />
         <Text style={styles.configError}>
           Supabase is not configured.{'\n'}
           Add EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY to your .env file.
@@ -56,7 +69,7 @@ export function LoginScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <View style={styles.card}>
-        <Text style={styles.title}>Just Loot</Text>
+        <LoginLogo />
         <Text style={styles.subtitle}>Sign in to save progress and fight real players</Text>
 
         <View style={styles.tabs}>
@@ -139,13 +152,12 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 360,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: colors.cta,
-    textAlign: 'center',
-    letterSpacing: 2,
-    marginBottom: 8,
+  logo: {
+    width: '100%',
+    maxWidth: 280,
+    aspectRatio: 1024 / 437,
+    alignSelf: 'center',
+    marginBottom: 20,
   },
   subtitle: {
     fontSize: 13,

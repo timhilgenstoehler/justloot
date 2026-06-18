@@ -8,6 +8,7 @@ declare module 'react-native' {
   export const Modal: ComponentType<any>;
   export const ActivityIndicator: ComponentType<any>;
   export const KeyboardAvoidingView: ComponentType<any>;
+  export const Image: ComponentType<any>;
 
   export interface FlatListProps<ItemT> {
     data?: ReadonlyArray<ItemT>;
