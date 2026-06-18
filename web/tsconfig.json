@@ -13,11 +13,28 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
+    "ignoreDeprecations": "6.0",
     "plugins": [{ "name": "next" }],
+    "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "expo-router": ["./src/shims/expo-router.tsx"],
+      "expo-haptics": ["./src/shims/expo-haptics.ts"],
+      "expo-status-bar": ["./src/shims/expo-status-bar.ts"],
+      "react-native-reanimated": ["./src/shims/react-native-reanimated.tsx"],
+      "react-native-safe-area-context": ["./src/shims/react-native-safe-area-context.tsx"],
+      "@react-native-async-storage/async-storage": ["./src/shims/async-storage.ts"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "include": [
+    "next-env.d.ts",
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    ".next/types/**/*.ts",
+    "../app/**/*.ts",
+    "../app/**/*.tsx",
+    "../src/**/*.ts",
+    "../src/**/*.tsx"
+  ],
+  "exclude": ["node_modules", "../app/_layout.tsx"]
 }

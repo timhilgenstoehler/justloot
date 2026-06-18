@@ -24,6 +24,7 @@ const nextConfig: NextConfig = {
       'react-native': reactNativeWeb,
       'expo-router': shim('expo-router.tsx'),
       'expo-haptics': shim('expo-haptics.ts'),
+      'expo-status-bar': shim('expo-status-bar.ts'),
       '@react-native-async-storage/async-storage': shim('async-storage.ts'),
       'react-native-reanimated': shim('react-native-reanimated.tsx'),
       'react-native-safe-area-context': shim('react-native-safe-area-context.tsx'),

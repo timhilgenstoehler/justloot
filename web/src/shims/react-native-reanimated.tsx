@@ -1,19 +1,30 @@
 'use client';
 
-import { useRef } from 'react';
-import { Text, View } from 'react-native';
+import { useRef, type ComponentType } from 'react';
+import { Text, View, type TextProps, type ViewProps } from 'react-native';
 
-function createAnimatedComponent<T>(Component: T): T {
-  return Component;
+type AnimationConfig = {
+  duration: (...args: number[]) => AnimationConfig;
+  springify: () => AnimationConfig;
+  damping: (...args: number[]) => AnimationConfig;
+};
+
+type AnimatedProps<P> = P & {
+  entering?: AnimationConfig;
+  exiting?: AnimationConfig;
+};
+
+function createAnimatedComponent<P>(Component: ComponentType<P>): ComponentType<AnimatedProps<P>> {
+  return Component as ComponentType<AnimatedProps<P>>;
 }
 
 const Animated = {
-  View,
-  Text,
+  View: View as ComponentType<AnimatedProps<ViewProps>>,
+  Text: Text as ComponentType<AnimatedProps<TextProps>>,
   createAnimatedComponent,
 };
 
-const animationPreset = {
+const animationPreset: AnimationConfig = {
   duration: () => animationPreset,
   springify: () => animationPreset,
   damping: () => animationPreset,
@@ -41,11 +52,11 @@ export function useAnimatedStyle<T extends object>(factory: () => T): T {
   return ref.current;
 }
 
-export function withTiming<T>(value: T): T {
+export function withTiming<T>(value: T, _config?: { duration?: number }): T {
   return value;
 }
 
-export function withRepeat<T>(value: T): T {
+export function withRepeat<T>(value: T, _repeats?: number, _reverse?: boolean): T {
   return value;
 }
 
