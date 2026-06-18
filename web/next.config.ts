@@ -3,6 +3,8 @@ import path from 'path';
 
 const shim = (name: string) => path.join(__dirname, 'src/shims', name);
 const rootSrc = path.join(__dirname, '..', 'src');
+const webNodeModules = path.resolve(__dirname, 'node_modules');
+const reactNativeWeb = path.resolve(webNodeModules, 'react-native-web');
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
@@ -10,9 +12,16 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ['@supabase/supabase-js'],
   transpilePackages: ['react-native', 'react-native-web'],
   webpack: (config, { isServer }) => {
+    // Parent app/ and src/ files live outside web/ — always resolve deps from web/node_modules.
+    config.resolve.modules = [
+      webNodeModules,
+      ...(Array.isArray(config.resolve.modules) ? config.resolve.modules : ['node_modules']),
+    ];
+
     config.resolve.alias = {
       ...config.resolve.alias,
-      'react-native$': 'react-native-web',
+      'react-native$': reactNativeWeb,
+      'react-native': reactNativeWeb,
       'expo-router': shim('expo-router.tsx'),
       'expo-haptics': shim('expo-haptics.ts'),
       '@react-native-async-storage/async-storage': shim('async-storage.ts'),
@@ -28,7 +37,6 @@ const nextConfig: NextConfig = {
       ...config.resolve.extensions,
     ];
 
-    // Avoid broken vendor-chunk paths for supabase on the server bundle.
     if (isServer) {
       config.externals = [...(config.externals as string[]), '@supabase/supabase-js'];
     }

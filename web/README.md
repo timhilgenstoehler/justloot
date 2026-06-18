@@ -16,8 +16,11 @@ Open [http://localhost:3000](http://localhost:3000).
 
 1. Push this repo to GitHub
 2. [vercel.com/new](https://vercel.com/new) → import the repo
-3. Set **Root Directory** to `web`
-4. Deploy — Vercel auto-detects Next.js
+3. Set **Root Directory** to `web` (required)
+4. Add environment variables (Production + Preview):
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+5. Deploy
 
 Or with the CLI:
 
