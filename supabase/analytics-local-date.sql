@@ -1,14 +1,4 @@
--- Run this in Supabase SQL Editor if you already deployed the base schema.
-
-create table if not exists public.daily_user_activity (
-  user_id uuid references public.profiles(id) on delete cascade not null,
-  activity_date date not null default ((now() at time zone 'utc')::date),
-  run_count int not null default 0 check (run_count >= 0),
-  primary key (user_id, activity_date)
-);
-
-create index if not exists daily_user_activity_date_idx
-  on public.daily_user_activity (activity_date desc);
+-- Run in Supabase SQL Editor to fix analytics day bucketing (local calendar date from client).
 
 create or replace function public.normalize_activity_date(p_activity_date date)
 returns date
@@ -75,30 +65,6 @@ begin
 end;
 $$;
 
-create or replace view public.analytics_dau as
-select
-  activity_date,
-  count(*)::int as dau
-from public.daily_user_activity
-group by activity_date
-order by activity_date desc;
-
-create or replace view public.analytics_runs_per_user_per_day as
-select
-  a.activity_date,
-  a.user_id,
-  p.display_name,
-  a.run_count
-from public.daily_user_activity a
-join public.profiles p on p.id = a.user_id
-order by a.activity_date desc, a.run_count desc;
-
-alter table public.daily_user_activity enable row level security;
-
-grant execute on function public.normalize_activity_date(date) to authenticated;
-grant execute on function public.record_daily_active(date) to authenticated;
-grant execute on function public.record_run(date) to authenticated;
-
 create or replace function public.get_analytics_dashboard(p_password text)
 returns json
 language plpgsql
@@ -137,4 +103,6 @@ begin
 end;
 $$;
 
-grant execute on function public.get_analytics_dashboard(text) to anon, authenticated;
+grant execute on function public.normalize_activity_date(date) to authenticated;
+grant execute on function public.record_daily_active(date) to authenticated;
+grant execute on function public.record_run(date) to authenticated;

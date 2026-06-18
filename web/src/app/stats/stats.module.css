@@ -88,6 +88,27 @@
   cursor: pointer;
 }
 
+.headerActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.refresh {
+  background: #121218;
+  border: 1px solid #1e1e28;
+  color: #e8e6e3;
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.refresh:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .error {
   margin: 0;
   color: #ef4444;
@@ -177,4 +198,40 @@
   text-align: center;
   color: #6b6b7b;
   padding: 24px !important;
+}
+
+.emptyBlock {
+  text-align: center;
+  color: #6b6b7b;
+  padding: 24px;
+  margin: 0;
+}
+
+.todayRow td {
+  background: #1a1810;
+}
+
+.dayGroup {
+  margin-bottom: 20px;
+}
+
+.dayHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+  padding: 0 2px;
+}
+
+.dayTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: #e8e6e3;
+}
+
+.dayMeta {
+  font-size: 11px;
+  color: #6b6b7b;
+  letter-spacing: 0.5px;
 }
