@@ -37,6 +37,7 @@ export function LoginScreen() {
   const error = useAuthStore((s) => s.error);
   const signIn = useAuthStore((s) => s.signIn);
   const signUp = useAuthStore((s) => s.signUp);
+  const signInAsGuest = useAuthStore((s) => s.signInAsGuest);
   const clearError = useAuthStore((s) => s.clearError);
 
   const handleSubmit = async () => {
@@ -135,6 +136,31 @@ export function LoginScreen() {
             </Text>
           )}
         </Pressable>
+
+        <View style={styles.dividerRow}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>or</Text>
+          <View style={styles.dividerLine} />
+        </View>
+
+        <Pressable
+          style={({ pressed }) => [
+            styles.guestButton,
+            pressed && styles.buttonPressed,
+            loading && styles.buttonDisabled,
+          ]}
+          onPress={() => {
+            clearError();
+            signInAsGuest();
+          }}
+          disabled={loading}
+        >
+          <Text style={styles.guestButtonText}>Play as Guest</Text>
+        </Pressable>
+
+        <Text style={styles.guestHint}>
+          One tap — anonymous account, progress saved to cloud on this device.
+        </Text>
       </View>
     </KeyboardAvoidingView>
   );
@@ -235,5 +261,45 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#0B0B0F',
     letterSpacing: 2,
+  },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 20,
+    marginBottom: 16,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.surfaceBorder,
+  },
+  dividerText: {
+    fontSize: 11,
+    color: colors.textMuted,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
+  guestButton: {
+    borderRadius: 6,
+    paddingVertical: 16,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.surfaceBorder,
+    backgroundColor: '#121218',
+  },
+  guestButtonText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    letterSpacing: 1.5,
+  },
+  guestHint: {
+    fontSize: 11,
+    color: colors.textMuted,
+    textAlign: 'center',
+    lineHeight: 16,
+    marginTop: 12,
+    paddingHorizontal: 8,
   },
 });

@@ -17,11 +17,27 @@ interface AuthState {
   initialize: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, displayName: string) => Promise<void>;
+  signInAsGuest: () => Promise<void>;
   signOut: () => Promise<void>;
   clearError: () => void;
 }
 
 let authSubscription: { unsubscribe: () => void } | null = null;
+
+function generateGuestName(): string {
+  return `Guest${Math.floor(1000 + Math.random() * 9000)}`;
+}
+
+async function loadCloudSaveWithRetry(userId: string): Promise<Awaited<ReturnType<typeof loadCloudSave>>> {
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const save = await loadCloudSave(userId);
+    if (save) return save;
+    if (attempt < 3) {
+      await new Promise((resolve) => setTimeout(resolve, 350 * (attempt + 1)));
+    }
+  }
+  return null;
+}
 
 async function hydrateUserSession(session: Session | null): Promise<void> {
   const game = useGameStore.getState();
@@ -33,7 +49,7 @@ async function hydrateUserSession(session: Session | null): Promise<void> {
     return;
   }
 
-  const save = await loadCloudSave(session.user.id);
+  const save = await loadCloudSaveWithRetry(session.user.id);
   if (save) {
     game.hydrateFromCloud(save);
   }
@@ -133,6 +149,29 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (error) throw error;
     } catch (err) {
       set({ error: err instanceof Error ? err.message : 'Sign up failed.' });
+      throw err;
+    } finally {
+      set({ loading: false });
+    }
+  },
+
+  signInAsGuest: async () => {
+    set({ loading: true, error: null });
+    try {
+      const supabase = getSupabase();
+      const { error } = await supabase.auth.signInAnonymously({
+        options: {
+          data: { display_name: generateGuestName() },
+        },
+      });
+      if (error) throw error;
+    } catch (err) {
+      set({
+        error:
+          err instanceof Error
+            ? err.message
+            : 'Guest sign-in failed. Enable Anonymous sign-in in Supabase.',
+      });
       throw err;
     } finally {
       set({ loading: false });

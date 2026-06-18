@@ -49,7 +49,13 @@ declare
 begin
   v_name := coalesce(
     nullif(trim(new.raw_user_meta_data->>'display_name'), ''),
-    split_part(new.email, '@', 1),
+    case
+      when coalesce(new.is_anonymous, false)
+        or new.email is null
+        or trim(coalesce(new.email, '')) = '' then
+        'Guest ' || upper(left(replace(new.id::text, '-', ''), 6))
+      else split_part(new.email, '@', 1)
+    end,
     'Adventurer'
   );
 
