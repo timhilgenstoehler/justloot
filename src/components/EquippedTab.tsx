@@ -1,7 +1,7 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { EquipmentColumn } from './EquipmentColumn';
 import { LEFT_SLOTS, RIGHT_SLOTS } from '../constants/slots';
-import { colors } from '../constants/theme';
+import { colors, rarityColors } from '../constants/theme';
 import type { Item, Slot } from '../types/game';
 import { useGameStore } from '../store/gameStore';
 
@@ -53,7 +53,13 @@ export function EquippedTab({ onItemPress }: EquippedTabProps) {
               disabled={!item}
             >
               <Text style={styles.slotLabel}>{slotConfig.label}</Text>
-              <Text style={[styles.slotValue, !item && styles.empty]}>
+              <Text
+                style={[
+                  styles.slotValue,
+                  !item && styles.empty,
+                  item && { color: rarityColors[item.rarity] },
+                ]}
+              >
                 {item ? item.name : '—'}
               </Text>
             </Pressable>
