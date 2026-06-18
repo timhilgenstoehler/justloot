@@ -1,0 +1,280 @@
+import * as Haptics from 'expo-haptics';
+import { useCallback, useEffect, useRef } from 'react';
+import {
+  FlatList,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { CombatHealthBar } from './CombatHealthBar';
+import { CombatSummary } from './CombatSummary';
+import { colors, rarityColors } from '../constants/theme';
+import type { CombatLogLine } from '../types/game';
+import { useGameStore } from '../store/gameStore';
+
+const TARGET_PLAYBACK_MS = 10000;
+const MIN_LINE_DELAY = 70;
+const MAX_LINE_DELAY = 180;
+
+function getLineDelay(lineCount: number): number {
+  const delay = Math.floor(TARGET_PLAYBACK_MS / Math.max(lineCount, 1));
+  return Math.min(MAX_LINE_DELAY, Math.max(MIN_LINE_DELAY, delay));
+}
+
+function getLineColor(line: CombatLogLine): string {
+  if (line.itemRarity) return rarityColors[line.itemRarity];
+  const { type, text } = line;
+  if (type === 'outcome') {
+    return text.includes('Victory') ? '#4ADE80' : '#EF4444';
+  }
+  if (type === 'proc') return '#5B7FFF';
+  if (text.includes('Critical Hit')) return '#F59E0B';
+  if (type === 'header' || type === 'encounter') return colors.textPrimary;
+  if (type === 'round') return colors.textMuted;
+  return colors.textPrimary;
+}
+
+function LogLine({ line }: { line: CombatLogLine }) {
+  if (line.type === 'health' && line.healthLabel && line.healthCurrent !== undefined && line.healthMax !== undefined) {
+    return (
+      <CombatHealthBar
+        label={line.healthLabel}
+        current={line.healthCurrent}
+        max={line.healthMax}
+        compact
+      />
+    );
+  }
+
+  const color = getLineColor(line);
+  if (line.text === '') return <View style={styles.spacer} />;
+  return (
+    <Text style={[styles.logLine, { color }, line.type === 'round' && line.text.startsWith('Round') && styles.roundLine]}>
+      {line.text}
+    </Text>
+  );
+}
+
+export function CombatOverlay() {
+  const runPhase = useGameStore((s) => s.runPhase);
+  const runMode = useGameStore((s) => s.runMode);
+  const combatResult = useGameStore((s) => s.combatResult);
+  const combatLogIndex = useGameStore((s) => s.combatLogIndex);
+  const advanceCombatLog = useGameStore((s) => s.advanceCombatLog);
+  const enterVictoryPhase = useGameStore((s) => s.enterVictoryPhase);
+  const finishCombatVictory = useGameStore((s) => s.finishCombatVictory);
+  const claimVictoryLoot = useGameStore((s) => s.claimVictoryLoot);
+  const finishCombatDefeat = useGameStore((s) => s.finishCombatDefeat);
+  const dismissArenaVictory = useGameStore((s) => s.dismissArenaVictory);
+
+  const listRef = useRef<FlatList<CombatLogLine>>(null);
+  const finishedRef = useRef(false);
+
+  const isReviewingVictory = runPhase === 'victory' && combatResult !== null;
+  const isPlayingCombat = runPhase === 'combat' && combatResult !== null;
+  const showOverlay = isPlayingCombat || isReviewingVictory;
+
+  const visibleLines = combatResult?.log.slice(0, combatLogIndex) ?? [];
+  const displayLines = visibleLines.filter((line) => line.type !== 'outcome');
+  const isComplete = combatResult !== null && combatLogIndex >= combatResult.log.length;
+
+  const handlePlaybackComplete = useCallback(() => {
+    if (finishedRef.current || !combatResult) return;
+    finishedRef.current = true;
+
+    if (combatResult.victory) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      if (runMode === 'arena') {
+        finishCombatVictory();
+      } else {
+        enterVictoryPhase();
+      }
+    } else {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      finishCombatDefeat();
+    }
+  }, [combatResult, runMode, enterVictoryPhase, finishCombatVictory, finishCombatDefeat]);
+
+  useEffect(() => {
+    if (!isPlayingCombat || !combatResult) return;
+
+    if (combatLogIndex === 0) {
+      finishedRef.current = false;
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+
+    if (combatLogIndex >= combatResult.log.length) {
+      const timer = setTimeout(handlePlaybackComplete, 400);
+      return () => clearTimeout(timer);
+    }
+
+    const currentLine = combatResult.log[combatLogIndex];
+    const baseDelay = getLineDelay(combatResult.log.length);
+    const extraPause =
+      currentLine?.type === 'round' || currentLine?.type === 'outcome'
+        ? 100
+        : currentLine?.type === 'health'
+          ? 60
+          : 0;
+
+    const timer = setTimeout(() => advanceCombatLog(), baseDelay + extraPause);
+    return () => clearTimeout(timer);
+  }, [isPlayingCombat, combatResult, combatLogIndex, advanceCombatLog, handlePlaybackComplete]);
+
+  useEffect(() => {
+    if (displayLines.length > 0) {
+      listRef.current?.scrollToEnd({ animated: true });
+    }
+  }, [displayLines.length]);
+
+  if (!showOverlay || !combatResult) return null;
+
+  const showVictorySummary = isComplete && combatResult.victory && isReviewingVictory;
+  const showVictoryButton = showVictorySummary;
+
+  return (
+    <View style={styles.overlay}>
+      <Text style={styles.location}>{combatResult.locationName}</Text>
+      <Text style={styles.depth}>Depth {combatResult.depth}</Text>
+
+      <View style={styles.terminal}>
+        <FlatList
+          ref={listRef}
+          data={displayLines}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => <LogLine line={item} />}
+          contentContainerStyle={styles.logContent}
+          showsVerticalScrollIndicator={false}
+          ListFooterComponent={
+            showVictorySummary ? (
+              <View>
+                <View style={styles.separator} />
+                <CombatSummary result={combatResult} variant="victory" />
+                {runMode === 'dungeon' && (
+                  <Text style={styles.lootHint}>Loot Found</Text>
+                )}
+              </View>
+            ) : null
+          }
+        />
+        {!isComplete && <Text style={styles.cursor}>_</Text>}
+      </View>
+
+      {showVictoryButton && runMode === 'dungeon' && (
+        <Pressable
+          style={({ pressed }) => [styles.actionButton, pressed && styles.actionPressed]}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            claimVictoryLoot();
+          }}
+        >
+          <Text style={styles.actionText}>Just Loot</Text>
+        </Pressable>
+      )}
+
+      {showVictoryButton && runMode === 'arena' && (
+        <Pressable
+          style={({ pressed }) => [styles.actionButton, pressed && styles.actionPressed]}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            dismissArenaVictory();
+          }}
+        >
+          <Text style={styles.actionText}>Continue</Text>
+        </Pressable>
+      )}
+    </View>
+  );
+}
+
+const mono = Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' });
+
+const styles = StyleSheet.create({
+  overlay: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(8, 8, 12, 0.97)',
+    zIndex: 100,
+    padding: 20,
+    paddingTop: 56,
+    paddingBottom: 24,
+  },
+  location: {
+    fontFamily: mono,
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    letterSpacing: 3,
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  depth: {
+    fontFamily: mono,
+    fontSize: 11,
+    color: colors.textMuted,
+    letterSpacing: 2,
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  separator: {
+    height: 1,
+    backgroundColor: colors.surfaceBorder,
+    marginVertical: 12,
+  },
+  terminal: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#2A2A35',
+    borderRadius: 4,
+    backgroundColor: '#0A0A0E',
+    padding: 12,
+  },
+  logContent: {
+    paddingTop: 4,
+    paddingBottom: 16,
+  },
+  logLine: {
+    fontFamily: mono,
+    fontSize: 13,
+    lineHeight: 20,
+    letterSpacing: 0.2,
+  },
+  roundLine: {
+    fontWeight: '600',
+    marginTop: 4,
+  },
+  spacer: { height: 8 },
+  cursor: {
+    fontFamily: mono,
+    fontSize: 13,
+    color: colors.cta,
+    position: 'absolute',
+    bottom: 12,
+    right: 16,
+  },
+  lootHint: {
+    fontFamily: mono,
+    fontSize: 11,
+    color: colors.textMuted,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    textAlign: 'center',
+    marginTop: 8,
+  },
+  actionButton: {
+    marginTop: 12,
+    backgroundColor: colors.cta,
+    paddingVertical: 16,
+    borderRadius: 4,
+    alignItems: 'center',
+  },
+  actionPressed: { opacity: 0.85 },
+  actionText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#0B0B0F',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+  },
+});
