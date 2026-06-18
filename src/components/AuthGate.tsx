@@ -4,6 +4,7 @@ import { useCloudSync } from '../hooks/useCloudSync';
 import { colors } from '../constants/theme';
 import { useAuthStore } from '../store/authStore';
 import { LoginScreen } from './LoginScreen';
+import { RunSessionOverlays } from './RunSessionOverlays';
 
 interface AuthGateProps {
   children: ReactNode;
@@ -37,6 +38,7 @@ export function AuthGate({ children }: AuthGateProps) {
   return (
     <View style={styles.root}>
       {children}
+      <RunSessionOverlays />
       <Pressable style={styles.signOut} onPress={() => signOut()}>
         <Text style={styles.signOutText}>Sign Out</Text>
       </Pressable>

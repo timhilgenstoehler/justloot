@@ -2,8 +2,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { CombatOverlay } from '../src/components/CombatOverlay';
-import { DefeatModal } from '../src/components/DefeatModal';
 import { colors } from '../src/constants/theme';
 import { getArenaOpponentsFromLeaderboard } from '../src/services/leaderboardService';
 import { useGameStore } from '../src/store/gameStore';
@@ -82,9 +80,6 @@ export default function ArenaScreen() {
       <Pressable onPress={() => router.push('/leaderboard')} style={styles.link}>
         <Text style={styles.linkText}>View Full Leaderboard</Text>
       </Pressable>
-
-      <CombatOverlay />
-      <DefeatModal />
     </SafeAreaView>
   );
 }

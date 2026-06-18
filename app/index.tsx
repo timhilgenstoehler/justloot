@@ -1,15 +1,11 @@
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { CombatOverlay } from '../src/components/CombatOverlay';
-import { DefeatModal } from '../src/components/DefeatModal';
 import { ItemDetailModal } from '../src/components/ItemDetailModal';
 import { NavRow } from '../src/components/NavRow';
 import { DepthSelector } from '../src/components/DepthSelector';
 import { EquipmentColumn } from '../src/components/EquipmentColumn';
 import { PowerHeader } from '../src/components/PowerHeader';
-import { RunResultModal } from '../src/components/RunResultModal';
-import { SalvageToast } from '../src/components/SalvageToast';
 import { StartRunButton } from '../src/components/StartRunButton';
 import { LEFT_SLOTS, RIGHT_SLOTS } from '../src/constants/slots';
 import { SCREEN_PADDING } from '../src/constants/layout';
@@ -91,10 +87,6 @@ export default function CharacterScreen() {
         equippedSlot={detailItem?.slot}
         onClose={() => setDetailItem(null)}
       />
-      <CombatOverlay />
-      <DefeatModal />
-      <RunResultModal />
-      <SalvageToast />
     </SafeAreaView>
   );
 }
