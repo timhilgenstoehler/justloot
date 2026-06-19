@@ -1,8 +1,9 @@
 import { useRouter } from 'expo-router';
+import { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ItemCard } from './ItemCard';
 import { ItemAffixQualityPanel } from './ItemAffixQualityPanel';
-import { getSlotLabel } from '../constants/slots';
+import { EquipSlotPicker } from './EquipSlotPicker';
 import { colors } from '../constants/theme';
 import { getItemFingerprint } from '../systems/lootGenerator';
 import { canSalvageItem, isNewDiscovery } from '../systems/inventoryUtils';
@@ -43,6 +44,8 @@ export function ItemDetailModal({ item, mode, equippedSlot, readOnly = false, on
   const salvageEquippedItem = useGameStore((s) => s.salvageEquippedItem);
   const markCollectionViewed = useGameStore((s) => s.markCollectionViewed);
 
+  const [slotOptions, setSlotOptions] = useState<Slot[] | null>(null);
+
   if (!item) return null;
 
   const invItem =
@@ -72,23 +75,14 @@ export function ItemDetailModal({ item, mode, equippedSlot, readOnly = false, on
 
     const resolution = resolveEquipSlot(item, equipment, targetSlot);
     if (resolution.needsSlotChoice && resolution.slotOptions) {
-      gameAlert(
-        'Choose Slot',
-        `Which ${item.slot.startsWith('ring') ? 'ring' : 'trinket'} slot?`,
-        [
-          ...resolution.slotOptions.map((slot) => ({
-            text: getSlotLabel(slot),
-            onPress: () => handleEquipWithSlot(slot),
-          })),
-          { text: 'Cancel', style: 'cancel' },
-        ],
-      );
+      setSlotOptions(resolution.slotOptions);
       return;
     }
     handleEquipWithSlot(resolution.slot);
   };
 
   const handleEquipWithSlot = (targetSlot?: Slot) => {
+    setSlotOptions(null);
     const result = beginEquipItem('inventory', item.id, targetSlot);
     if (result === 'needs_comparison') {
       onClose();
@@ -170,7 +164,15 @@ export function ItemDetailModal({ item, mode, equippedSlot, readOnly = false, on
           </ScrollView>
 
           <View style={styles.actions}>
-            {!readOnly && mode === 'inventory' && (
+            {slotOptions && (
+              <EquipSlotPicker
+                itemKind={item.slot.startsWith('ring') ? 'ring' : 'trinket'}
+                slots={slotOptions}
+                onSelect={handleEquipWithSlot}
+                onCancel={() => setSlotOptions(null)}
+              />
+            )}
+            {!readOnly && mode === 'inventory' && !slotOptions && (
               <>
                 <Pressable
                   style={({ pressed }) => [styles.actionBtn, styles.equipBtn, pressed && styles.pressed]}
@@ -199,7 +201,7 @@ export function ItemDetailModal({ item, mode, equippedSlot, readOnly = false, on
                 </Pressable>
               </>
             )}
-            {!readOnly && mode === 'equipped' && equippedSlot && (
+            {!readOnly && mode === 'equipped' && equippedSlot && !slotOptions && (
               <>
                 <Pressable
                   style={({ pressed }) => [styles.actionBtn, pressed && styles.pressed]}
@@ -217,12 +219,14 @@ export function ItemDetailModal({ item, mode, equippedSlot, readOnly = false, on
                 </Pressable>
               </>
             )}
-            <Pressable
-              style={({ pressed }) => [styles.actionBtn, pressed && styles.pressed]}
-              onPress={onClose}
-            >
-              <Text style={styles.actionText}>Close</Text>
-            </Pressable>
+            {!slotOptions && (
+              <Pressable
+                style={({ pressed }) => [styles.actionBtn, pressed && styles.pressed]}
+                onPress={onClose}
+              >
+                <Text style={styles.actionText}>Close</Text>
+              </Pressable>
+            )}
           </View>
         </View>
       </View>

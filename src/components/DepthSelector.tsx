@@ -1,4 +1,13 @@
-import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { useEffect, useRef } from 'react';
+import {
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import { scaleEnemyStat } from '../constants/combatBalance';
 import { SCREEN_PADDING } from '../constants/layout';
 import { colors } from '../constants/theme';
@@ -10,22 +19,9 @@ interface DepthSelectorProps {
   disabled?: boolean;
 }
 
+const CHIP_SIZE = 40;
 const CHIP_GAP = 6;
-const MAX_CHIP = 42;
-const MIN_CHIP = 32;
-
-function getChipLayout(screenWidth: number, count: number) {
-  const available = screenWidth - SCREEN_PADDING * 2;
-  const fitSize =
-    count > 0
-      ? Math.floor((available - CHIP_GAP * (count - 1)) / count)
-      : MAX_CHIP;
-  const chipSize = Math.min(MAX_CHIP, Math.max(MIN_CHIP, fitSize));
-  const totalWidth = count * chipSize + Math.max(0, count - 1) * CHIP_GAP;
-  const needsScroll = totalWidth > available;
-
-  return { chipSize, needsScroll };
-}
+const PHONE_MAX_WIDTH = 430;
 
 export function DepthSelector({
   maxUnlocked,
@@ -33,45 +29,54 @@ export function DepthSelector({
   onSelect,
   disabled,
 }: DepthSelectorProps) {
-  const { width: screenWidth } = useWindowDimensions();
+  const { width: windowWidth } = useWindowDimensions();
+  const scrollRef = useRef<ScrollView>(null);
   const depths = Array.from({ length: maxUnlocked }, (_, i) => i + 1);
   const previewStats = scaleEnemyStat(selectedDepth);
-  const { chipSize, needsScroll } = getChipLayout(screenWidth, depths.length);
 
-  const chips = depths.map((d) => {
-    const isSelected = d === selectedDepth;
-    return (
-      <Pressable
-        key={d}
-        style={({ pressed }) => [
-          styles.chip,
-          { width: chipSize, height: chipSize },
-          isSelected && styles.chipSelected,
-          pressed && !disabled && styles.chipPressed,
-          disabled && styles.chipDisabled,
-        ]}
-        onPress={() => onSelect(d)}
-        disabled={disabled}
-      >
-        <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>{d}</Text>
-      </Pressable>
-    );
-  });
+  const rowWidth = depths.length * CHIP_SIZE + Math.max(0, depths.length - 1) * CHIP_GAP;
+  const viewportWidth = Math.min(windowWidth, PHONE_MAX_WIDTH) - SCREEN_PADDING * 2;
+
+  useEffect(() => {
+    const chipOffset = (selectedDepth - 1) * (CHIP_SIZE + CHIP_GAP);
+    const centered = chipOffset - viewportWidth / 2 + CHIP_SIZE / 2;
+    const maxScroll = Math.max(0, rowWidth - viewportWidth);
+    scrollRef.current?.scrollTo({
+      x: Math.min(maxScroll, Math.max(0, centered)),
+      animated: true,
+    });
+  }, [selectedDepth, viewportWidth, rowWidth]);
 
   return (
     <View style={styles.container}>
       <Text style={styles.label}>Choose Depth</Text>
-      {needsScroll ? (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.scrollRow}
-        >
-          {chips}
-        </ScrollView>
-      ) : (
-        <View style={styles.row}>{chips}</View>
-      )}
+      <ScrollView
+        ref={scrollRef}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={[styles.scroll, { width: viewportWidth }]}
+        contentContainerStyle={styles.scrollRow}
+        nestedScrollEnabled
+      >
+        {depths.map((d) => {
+          const isSelected = d === selectedDepth;
+          return (
+            <Pressable
+              key={d}
+              style={({ pressed }) => [
+                styles.chip,
+                isSelected && styles.chipSelected,
+                pressed && !disabled && styles.chipPressed,
+                disabled && styles.chipDisabled,
+              ]}
+              onPress={() => onSelect(d)}
+              disabled={disabled}
+            >
+              <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>{d}</Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
       <Text style={styles.preview} numberOfLines={2}>
         Enemy preview — HP {previewStats.health} · ATK {previewStats.attack}
       </Text>
@@ -86,6 +91,7 @@ const styles = StyleSheet.create({
   container: {
     marginBottom: 10,
     paddingHorizontal: SCREEN_PADDING,
+    alignItems: 'center',
   },
   label: {
     fontSize: 10,
@@ -95,10 +101,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 8,
   },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: CHIP_GAP,
+  scroll: {
+    flexGrow: 0,
+    ...(Platform.OS === 'web' ? { overflowX: 'auto' as const } : null),
   },
   scrollRow: {
     flexDirection: 'row',
@@ -106,6 +111,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 2,
   },
   chip: {
+    width: CHIP_SIZE,
+    height: CHIP_SIZE,
     borderRadius: 6,
     borderWidth: 1.5,
     borderColor: '#2A2A35',
