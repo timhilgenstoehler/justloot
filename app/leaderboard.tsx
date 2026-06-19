@@ -1,9 +1,17 @@
 import { useRouter } from 'expo-router';
-import { useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../src/constants/theme';
+import { sortLeaderboard } from '../src/systems/leaderboardSystem';
 import { useGameStore } from '../src/store/gameStore';
+import type { LeaderboardSort } from '../src/types/game';
+
+const SORT_OPTIONS: { id: LeaderboardSort; label: string }[] = [
+  { id: 'rating', label: 'Rating' },
+  { id: 'power', label: 'Power' },
+  { id: 'depth', label: 'Depth' },
+];
 
 export default function LeaderboardScreen() {
   const router = useRouter();
@@ -13,6 +21,12 @@ export default function LeaderboardScreen() {
   const runPhase = useGameStore((s) => s.runPhase);
   const showResult = useGameStore((s) => s.showResult);
   const disabled = runPhase !== 'idle' || showResult;
+  const [sortBy, setSortBy] = useState<LeaderboardSort>('rating');
+
+  const sortedLeaderboard = useMemo(
+    () => sortLeaderboard(leaderboard, sortBy),
+    [leaderboard, sortBy],
+  );
 
   useEffect(() => {
     ensureLeaderboardReady();
@@ -26,8 +40,23 @@ export default function LeaderboardScreen() {
 
       <Text style={styles.title}>Leaderboard</Text>
 
+      <Text style={styles.sortLabel}>Sort</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.sortRow}>
+        {SORT_OPTIONS.map((opt) => (
+          <Pressable
+            key={opt.id}
+            style={[styles.chip, sortBy === opt.id && styles.chipActive]}
+            onPress={() => setSortBy(opt.id)}
+          >
+            <Text style={[styles.chipText, sortBy === opt.id && styles.chipTextActive]}>
+              {opt.label}
+            </Text>
+          </Pressable>
+        ))}
+      </ScrollView>
+
       <ScrollView showsVerticalScrollIndicator={false}>
-        {leaderboard.map((entry, index) => (
+        {sortedLeaderboard.map((entry, index) => (
           <View
             key={entry.id}
             style={[styles.row, entry.isPlayer && styles.playerRow]}
@@ -85,8 +114,27 @@ const styles = StyleSheet.create({
     letterSpacing: 3,
     textTransform: 'uppercase',
     textAlign: 'center',
-    marginBottom: 24,
+    marginBottom: 16,
   },
+  sortLabel: {
+    fontSize: 10,
+    color: colors.textMuted,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    marginBottom: 6,
+  },
+  sortRow: { marginBottom: 16, maxHeight: 36, flexGrow: 0 },
+  chip: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: colors.surfaceBorder,
+    marginRight: 6,
+  },
+  chipActive: { borderColor: colors.cta, backgroundColor: '#1A1810' },
+  chipText: { fontSize: 11, color: colors.textMuted, fontWeight: '600' },
+  chipTextActive: { color: colors.cta },
   row: {
     flexDirection: 'row',
     alignItems: 'center',

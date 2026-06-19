@@ -177,28 +177,23 @@ export function CombatOverlay() {
           data={displayLines}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => <LogLine line={item} />}
+          style={styles.logList}
           contentContainerStyle={styles.logContent}
           showsVerticalScrollIndicator={false}
-          ListFooterComponent={
-            showVictorySummary ? (
-              <View>
-                <View style={styles.separator} />
-                <Text style={styles.victoryTitle}>VICTORY</Text>
-                <Text style={styles.survivalLine}>
-                  You survived with {combatResult.playerFinalHp} HP.
-                </Text>
-                {runMode === 'dungeon' && (
-                  <Text style={styles.lootHint}>Loot Found.</Text>
-                )}
-                {runMode === 'arena' && (
-                  <CombatSummary result={combatResult} variant="victory" />
-                )}
-              </View>
-            ) : null
-          }
         />
         {!isComplete && <Text style={styles.cursor}>_</Text>}
       </View>
+
+      {showVictorySummary && (
+        <View style={styles.victoryFooter}>
+          <Text style={styles.victoryTitle}>VICTORY</Text>
+          <Text style={styles.survivalLine}>
+            You survived with {combatResult.playerFinalHp} HP.
+          </Text>
+          {runMode === 'dungeon' && <Text style={styles.lootHint}>Loot Found.</Text>}
+          {runMode === 'arena' && <CombatSummary result={combatResult} variant="victory" />}
+        </View>
+      )}
 
       {showVictoryButton && runMode === 'dungeon' && (
         <Pressable
@@ -238,6 +233,7 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingTop: 56,
     paddingBottom: 24,
+    overflow: 'hidden',
   }),
   lootOverlay: modalBackdropStyle({
     backgroundColor: 'rgba(0, 0, 0, 0.92)',
@@ -259,18 +255,17 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 12,
   },
-  separator: {
-    height: 1,
-    backgroundColor: colors.surfaceBorder,
-    marginVertical: 12,
-  },
   terminal: {
     flex: 1,
+    minHeight: 0,
     borderWidth: 1,
     borderColor: '#2A2A35',
     borderRadius: 4,
     backgroundColor: '#0A0A0E',
     padding: 12,
+  },
+  logList: {
+    flex: 1,
   },
   healthRow: {
     flexDirection: 'row',
@@ -317,7 +312,14 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
     textTransform: 'uppercase',
     textAlign: 'center',
-    marginTop: 8,
+    marginTop: 4,
+  },
+  victoryFooter: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: colors.surfaceBorder,
+    flexShrink: 0,
   },
   victoryTitle: {
     fontFamily: mono,
@@ -337,6 +339,7 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     marginTop: 12,
+    flexShrink: 0,
     backgroundColor: colors.cta,
     paddingVertical: 16,
     borderRadius: 4,

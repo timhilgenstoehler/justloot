@@ -1,4 +1,4 @@
-import type { LeaderboardEntry } from '../types/game';
+import type { LeaderboardEntry, LeaderboardSort } from '../types/game';
 import { calculateArenaRatingChange } from './arenaOpponentGenerator';
 import { scaleEnemyStat } from '../constants/combatBalance';
 import type { Enemy } from '../types/game';
@@ -103,6 +103,29 @@ export function ensureLeaderboard(
 
 export function getArenaOpponents(leaderboard: LeaderboardEntry[]): LeaderboardEntry[] {
   return leaderboard.filter((e) => !e.isPlayer);
+}
+
+export function sortLeaderboard(
+  entries: LeaderboardEntry[],
+  sortBy: LeaderboardSort,
+): LeaderboardEntry[] {
+  const sorted = [...entries];
+  sorted.sort((a, b) => {
+    if (sortBy === 'rating') {
+      if (b.arenaRating !== a.arenaRating) return b.arenaRating - a.arenaRating;
+      if (b.powerScore !== a.powerScore) return b.powerScore - a.powerScore;
+      return b.depth - a.depth;
+    }
+    if (sortBy === 'power') {
+      if (b.powerScore !== a.powerScore) return b.powerScore - a.powerScore;
+      if (b.arenaRating !== a.arenaRating) return b.arenaRating - a.arenaRating;
+      return b.depth - a.depth;
+    }
+    if (b.depth !== a.depth) return b.depth - a.depth;
+    if (b.powerScore !== a.powerScore) return b.powerScore - a.powerScore;
+    return b.arenaRating - a.arenaRating;
+  });
+  return sorted;
 }
 
 export function getLeaderboardEntry(

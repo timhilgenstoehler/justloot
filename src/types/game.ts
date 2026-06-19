@@ -279,6 +279,8 @@ export interface LeaderboardEntry {
   isPlayer?: boolean;
 }
 
+export type LeaderboardSort = 'rating' | 'power' | 'depth';
+
 export interface LootBonuses {
   lootQuality: number;
   lootRarity: number;
