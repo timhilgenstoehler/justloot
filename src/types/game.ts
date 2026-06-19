@@ -122,7 +122,7 @@ export interface CompareRequest {
   targetSlot: Slot;
 }
 
-export const INVENTORY_CAPACITY = 100;
+export const INVENTORY_CAPACITY = 1000;
 
 export interface CombatStats {
   health: number;
