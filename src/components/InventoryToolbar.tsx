@@ -1,6 +1,8 @@
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { colors, rarityColors } from '../constants/theme';
-import { RARITY_FILTER_OPTIONS } from '../systems/inventoryUtils';
+import { getSalvageDust } from '../utils/lootReveal';
+import { gameAlert } from '../utils/gameAlert';
+import { getBulkSalvageCandidates, RARITY_FILTER_OPTIONS } from '../systems/inventoryUtils';
 import type { InventoryRarityFilter, InventorySlotFilter, InventorySort, Rarity, Slot } from '../types/game';
 import { INVENTORY_CAPACITY } from '../types/game';
 import { useGameStore } from '../store/gameStore';
@@ -39,30 +41,26 @@ export function InventoryToolbar({ count }: InventoryToolbarProps) {
   const setInventorySort = useGameStore((s) => s.setInventorySort);
   const setInventorySlotFilter = useGameStore((s) => s.setInventorySlotFilter);
   const setInventoryRarityFilter = useGameStore((s) => s.setInventoryRarityFilter);
-  const bulkDeleteByRarity = useGameStore((s) => s.bulkDeleteByRarity);
+  const bulkSalvageByRarity = useGameStore((s) => s.bulkSalvageByRarity);
   const inventory = useGameStore((s) => s.inventory);
   const equipment = useGameStore((s) => s.equipment);
 
-  const confirmBulkDelete = (rarity: Rarity, label: string) => {
-    const candidates = inventory.filter(
-      (item) =>
-        item.rarity === rarity &&
-        !item.favorite &&
-        !Object.values(equipment).some((e) => e?.id === item.id),
-    );
+  const confirmBulkSalvage = (rarity: Rarity, label: string) => {
+    const candidates = getBulkSalvageCandidates(inventory, rarity, equipment);
     if (candidates.length === 0) {
-      Alert.alert('Nothing to Delete', `No deletable ${label.toLowerCase()} items in inventory.`);
+      gameAlert('Nothing to Salvage', `No salvageable ${label.toLowerCase()} items in inventory.`);
       return;
     }
-    Alert.alert(
-      `Delete All ${label}s`,
-      `Permanently delete ${candidates.length} ${label.toLowerCase()} item(s)? Favorited and equipped items are skipped.`,
+    const dustTotal = candidates.reduce((sum, item) => sum + getSalvageDust(item), 0);
+    gameAlert(
+      `Salvage All ${label}s`,
+      `Destroy ${candidates.length} ${label.toLowerCase()} item(s) for +${dustTotal} Dust? Favorited and equipped items are skipped.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Delete',
+          text: 'Salvage',
           style: 'destructive',
-          onPress: () => bulkDeleteByRarity(rarity),
+          onPress: () => bulkSalvageByRarity(rarity),
         },
       ],
     );
@@ -124,11 +122,11 @@ export function InventoryToolbar({ count }: InventoryToolbarProps) {
       </ScrollView>
 
       <View style={styles.bulkRow}>
-        <Pressable style={styles.bulkBtn} onPress={() => confirmBulkDelete('common', 'Common')}>
-          <Text style={styles.bulkText}>Delete All Commons</Text>
+        <Pressable style={styles.bulkBtn} onPress={() => confirmBulkSalvage('common', 'Common')}>
+          <Text style={styles.bulkText}>Salvage All Commons</Text>
         </Pressable>
-        <Pressable style={styles.bulkBtn} onPress={() => confirmBulkDelete('rare', 'Rare')}>
-          <Text style={styles.bulkText}>Delete All Rares</Text>
+        <Pressable style={styles.bulkBtn} onPress={() => confirmBulkSalvage('rare', 'Rare')}>
+          <Text style={styles.bulkText}>Salvage All Rares</Text>
         </Pressable>
       </View>
     </View>

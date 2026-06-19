@@ -315,4 +315,10 @@ export interface GameState {
   runBuildState: BuildCombatState;
   arenaOpponentRating: number | null;
   arenaOpponentId: string | null;
+  packReveal: PackRevealSession | null;
+}
+
+export interface PackRevealSession {
+  packName: string;
+  items: Item[] | null;
 }

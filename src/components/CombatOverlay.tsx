@@ -2,6 +2,7 @@ import * as Haptics from 'expo-haptics';
 import { useCallback, useEffect, useRef } from 'react';
 import {
   FlatList,
+  Modal,
   Platform,
   Pressable,
   StyleSheet,
@@ -10,9 +11,11 @@ import {
 } from 'react-native';
 import { CombatHealthBar } from './CombatHealthBar';
 import { CombatSummary } from './CombatSummary';
+import { LootRevealFlow } from './LootRevealFlow';
 import { colors, rarityColors } from '../constants/theme';
 import type { CombatLogLine, CombatResult } from '../types/game';
 import { useGameStore } from '../store/gameStore';
+import { modalBackdropStyle } from '../utils/modalLayout';
 
 const TARGET_PLAYBACK_MS = 10000;
 const MIN_LINE_DELAY = 70;
@@ -67,13 +70,17 @@ export function CombatOverlay() {
   const claimVictoryLoot = useGameStore((s) => s.claimVictoryLoot);
   const finishCombatDefeat = useGameStore((s) => s.finishCombatDefeat);
   const dismissArenaVictory = useGameStore((s) => s.dismissArenaVictory);
+  const showResult = useGameStore((s) => s.showResult);
+  const pendingLoot = useGameStore((s) => s.pendingLoot);
 
   const listRef = useRef<FlatList<CombatLogLine>>(null);
   const finishedRef = useRef(false);
 
+  const showLootReveal = showResult && pendingLoot !== null;
   const isReviewingVictory = runPhase === 'victory' && combatResult !== null;
   const isPlayingCombat = runPhase === 'combat' && combatResult !== null;
-  const showOverlay = isPlayingCombat || isReviewingVictory;
+  const showCombat = isPlayingCombat || isReviewingVictory;
+  const showOverlay = showCombat || showLootReveal;
 
   const visibleLines = combatResult?.log.slice(0, combatLogIndex) ?? [];
   const displayLines = visibleLines.filter((line) => line.type !== 'outcome' && line.type !== 'health');
@@ -128,13 +135,18 @@ export function CombatOverlay() {
     }
   }, [displayLines.length]);
 
-  if (!showOverlay || !combatResult) return null;
+  if (!showOverlay) return null;
 
-  const showVictorySummary = isComplete && combatResult.victory && isReviewingVictory;
+  const showVictorySummary = isComplete && combatResult?.victory && isReviewingVictory;
   const showVictoryButton = showVictorySummary;
 
   return (
-    <View style={styles.overlay}>
+    <Modal visible animationType="fade" transparent statusBarTranslucent>
+      <View style={showLootReveal ? styles.lootOverlay : styles.overlay}>
+        {showLootReveal ? (
+          <LootRevealFlow />
+        ) : combatResult ? (
+          <>
       <Text style={styles.location}>{combatResult.locationName}</Text>
       <Text style={styles.depth}>Depth {combatResult.depth}</Text>
 
@@ -171,9 +183,15 @@ export function CombatOverlay() {
             showVictorySummary ? (
               <View>
                 <View style={styles.separator} />
-                <CombatSummary result={combatResult} variant="victory" />
+                <Text style={styles.victoryTitle}>VICTORY</Text>
+                <Text style={styles.survivalLine}>
+                  You survived with {combatResult.playerFinalHp} HP.
+                </Text>
                 {runMode === 'dungeon' && (
-                  <Text style={styles.lootHint}>Loot Found</Text>
+                  <Text style={styles.lootHint}>Loot Found.</Text>
+                )}
+                {runMode === 'arena' && (
+                  <CombatSummary result={combatResult} variant="victory" />
                 )}
               </View>
             ) : null
@@ -190,7 +208,7 @@ export function CombatOverlay() {
             claimVictoryLoot();
           }}
         >
-          <Text style={styles.actionText}>Just Loot</Text>
+          <Text style={styles.actionText}>REVEAL</Text>
         </Pressable>
       )}
 
@@ -205,21 +223,25 @@ export function CombatOverlay() {
           <Text style={styles.actionText}>Continue</Text>
         </Pressable>
       )}
-    </View>
+          </>
+        ) : null}
+      </View>
+    </Modal>
   );
 }
 
 const mono = Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' });
 
 const styles = StyleSheet.create({
-  overlay: {
-    ...StyleSheet.absoluteFill,
+  overlay: modalBackdropStyle({
     backgroundColor: 'rgba(8, 8, 12, 0.97)',
-    zIndex: 100,
     padding: 20,
     paddingTop: 56,
     paddingBottom: 24,
-  },
+  }),
+  lootOverlay: modalBackdropStyle({
+    backgroundColor: 'rgba(0, 0, 0, 0.92)',
+  }),
   location: {
     fontFamily: mono,
     fontSize: 13,
@@ -296,6 +318,22 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     textAlign: 'center',
     marginTop: 8,
+  },
+  victoryTitle: {
+    fontFamily: mono,
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#4ADE80',
+    letterSpacing: 4,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  survivalLine: {
+    fontFamily: mono,
+    fontSize: 13,
+    color: colors.textPrimary,
+    textAlign: 'center',
+    marginBottom: 4,
   },
   actionButton: {
     marginTop: 12,

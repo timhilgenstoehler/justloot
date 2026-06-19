@@ -3,6 +3,11 @@ import type { Item, Slot } from '../types/game';
 const RING_SLOTS: Slot[] = ['ring1', 'ring2'];
 const TRINKET_SLOTS: Slot[] = ['trinket1', 'trinket2'];
 
+export const DUAL_SLOT_GROUPS = {
+  ring: RING_SLOTS,
+  trinket: TRINKET_SLOTS,
+} as const;
+
 export interface EquipSlotResolution {
   slot: Slot;
   needsSlotChoice: boolean;
@@ -21,6 +26,17 @@ export function getSlotGroup(slot: Slot): Slot | 'ring' | 'trinket' {
   if (isRingSlot(slot)) return 'ring';
   if (isTrinketSlot(slot)) return 'trinket';
   return slot;
+}
+
+/** Both equip slots for ring/trinket items; null for other gear. */
+export function getDualSlotOptions(item: Pick<Item, 'slot'>): Slot[] | null {
+  if (isRingSlot(item.slot)) return RING_SLOTS;
+  if (isTrinketSlot(item.slot)) return TRINKET_SLOTS;
+  return null;
+}
+
+export function isDualSlotItem(item: Pick<Item, 'slot'>): boolean {
+  return getDualSlotOptions(item) !== null;
 }
 
 export function resolveEquipSlot(

@@ -16,6 +16,7 @@ export default function RootLayout() {
       >
         <Stack.Screen name="index" />
         <Stack.Screen name="gear" />
+        <Stack.Screen name="craft" />
         <Stack.Screen name="arena" />
         <Stack.Screen name="collection" />
         <Stack.Screen name="leaderboard" />

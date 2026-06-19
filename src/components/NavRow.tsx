@@ -26,6 +26,11 @@ export function NavRow({ disabled }: NavRowProps) {
 
   const links: NavLink[] = [
     {
+      label: 'Craft',
+      href: '/craft',
+      match: (path) => path === '/craft' || path.startsWith('/craft/'),
+    },
+    {
       label: 'Arena',
       href: '/arena',
       match: (path) => path === '/arena' || path.startsWith('/arena/'),

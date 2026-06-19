@@ -1,228 +1,366 @@
 import * as Haptics from 'expo-haptics';
-import { useEffect, useRef, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import Animated, {
-  FadeIn,
-  FadeInDown,
-  ZoomIn,
-} from 'react-native-reanimated';
-import { getSlotLabel } from '../constants/slots';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors, rarityColors, rarityLabels } from '../constants/theme';
-import { getAffixDisplayLines } from '../systems/powerCalculator';
 import type { Item } from '../types/game';
+import {
+  POWER_VERDICT_COLORS,
+  POWER_VERDICT_LABELS,
+  getFlatAffixLines,
+  getPowerVerdict,
+  isHighRarityReveal,
+  isFullRevealRarity,
+} from '../utils/lootReveal';
 
-const QUALITY_LABELS: Record<Item['quality'], string> = {
-  poor: 'Poor',
-  normal: '',
-  great: 'Great',
-  perfect: 'Perfect',
-  ancient: 'Ancient',
-};
+export type RevealStep =
+  | 'locked'
+  | 'announce'
+  | 'rarity'
+  | 'name'
+  | 'affix'
+  | 'power'
+  | 'full'
+  | 'collection';
+
+interface CollectionStats {
+  itemsFound: number;
+  legendariesFound: number;
+  mythicsFound: number;
+}
 
 interface ItemRevealProps {
   item: Item;
-  playerName: string;
+  equippedItem?: Item;
+  collectionStats: CollectionStats;
+  isFirstMythic?: boolean;
   onRevealComplete?: () => void;
 }
 
-export function ItemReveal({ item, playerName, onRevealComplete }: ItemRevealProps) {
-  const [phase, setPhase] = useState<'rarity' | 'meta' | 'stats' | 'footer'>('rarity');
-  const [visibleGroupCount, setVisibleGroupCount] = useState(0);
-  const [showFooter, setShowFooter] = useState(false);
+export function ItemReveal({
+  item,
+  equippedItem,
+  collectionStats,
+  isFirstMythic,
+  onRevealComplete,
+}: ItemRevealProps) {
+  const affixes = useMemo(() => getFlatAffixLines(item), [item]);
+  const hasAnnounce = isHighRarityReveal(item.rarity);
+  const isFullReveal = isFullRevealRarity(item.rarity);
+  const nameColor = rarityColors[item.rarity];
+  const verdict = getPowerVerdict(item.power, equippedItem?.power);
+
+  const steps = useMemo<RevealStep[]>(() => {
+    if (!isFullReveal) {
+      return ['locked', 'rarity', 'full'];
+    }
+    const sequence: RevealStep[] = ['locked'];
+    if (hasAnnounce) sequence.push('announce');
+    sequence.push('rarity', 'name');
+    for (let i = 0; i < affixes.length; i++) sequence.push('affix');
+    sequence.push('power', 'collection');
+    return sequence;
+  }, [affixes.length, hasAnnounce, isFullReveal]);
+
+  const [stepIndex, setStepIndex] = useState(0);
   const onRevealCompleteRef = useRef(onRevealComplete);
   onRevealCompleteRef.current = onRevealComplete;
 
-  const nameColor = rarityColors[item.rarity];
-  const groups = getAffixDisplayLines(item);
-  const isMythic = item.rarity === 'mythic';
-  const RARITY_HOLD_MS = isMythic ? 1600 : item.rarity === 'legendary' ? 1100 : 900;
-  const STAT_INTERVAL_MS = isMythic ? 280 : 220;
-  const META_DELAY_MS = isMythic ? 700 : 500;
+  const currentStep = steps[stepIndex] ?? 'collection';
+  const visibleAffixCount = steps.slice(0, stepIndex + 1).filter((s) => s === 'affix').length;
+  const rarityRevealed =
+    currentStep === 'rarity' ||
+    currentStep === 'name' ||
+    currentStep === 'affix' ||
+    currentStep === 'power' ||
+    currentStep === 'full' ||
+    currentStep === 'collection';
+
+  const reset = useCallback(() => {
+    setStepIndex(0);
+  }, []);
 
   useEffect(() => {
-    setPhase('rarity');
-    setVisibleGroupCount(0);
-    setShowFooter(false);
+    reset();
+  }, [item.id, reset]);
 
-    if (isMythic) {
+  const fireRevealHaptics = useCallback(() => {
+    if (item.rarity === 'mythic') {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } else if (item.rarity === 'legendary') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    } else if (item.rarity === 'epic') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    } else {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+  }, [item.rarity]);
+
+  const advance = useCallback(() => {
+    const nextIndex = stepIndex + 1;
+    if (nextIndex >= steps.length) {
+      onRevealCompleteRef.current?.();
+      return;
     }
 
-    const timers: ReturnType<typeof setTimeout>[] = [];
-
-    timers.push(setTimeout(() => setPhase('meta'), RARITY_HOLD_MS));
-    timers.push(
-      setTimeout(() => {
-        setPhase('stats');
-        setVisibleGroupCount(1);
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      }, RARITY_HOLD_MS + META_DELAY_MS),
-    );
-
-    for (let i = 1; i < groups.length; i++) {
-      timers.push(
-        setTimeout(() => {
-          setVisibleGroupCount(i + 1);
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        }, RARITY_HOLD_MS + META_DELAY_MS + i * STAT_INTERVAL_MS),
-      );
+    const nextStep = steps[nextIndex];
+    if (currentStep === 'locked' && (nextStep === 'announce' || nextStep === 'rarity')) {
+      fireRevealHaptics();
+    } else if (nextStep === 'affix') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } else if (nextStep === 'power') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
 
-    const footerAt =
-      RARITY_HOLD_MS +
-      META_DELAY_MS +
-      Math.max(groups.length, 1) * STAT_INTERVAL_MS +
-      300;
+    setStepIndex(nextIndex);
+  }, [currentStep, fireRevealHaptics, stepIndex, steps]);
 
-    timers.push(
-      setTimeout(() => {
-        setPhase('footer');
-        setShowFooter(true);
-        onRevealCompleteRef.current?.();
-      }, footerAt),
-    );
+  const showRarity =
+    currentStep === 'rarity' ||
+    currentStep === 'name' ||
+    currentStep === 'affix' ||
+    currentStep === 'power' ||
+    currentStep === 'full' ||
+    currentStep === 'collection';
 
-    return () => timers.forEach(clearTimeout);
-  }, [item.id, groups.length, item.rarity, isMythic, RARITY_HOLD_MS, META_DELAY_MS, STAT_INTERVAL_MS]);
+  const showName =
+    currentStep === 'name' ||
+    currentStep === 'affix' ||
+    currentStep === 'power' ||
+    currentStep === 'full' ||
+    currentStep === 'collection';
 
-  const qualityLabel = QUALITY_LABELS[item.quality];
+  const showAffixes =
+    currentStep === 'affix' ||
+    currentStep === 'power' ||
+    currentStep === 'full' ||
+    currentStep === 'collection';
+
+  const showPower =
+    currentStep === 'power' || currentStep === 'full' || currentStep === 'collection';
+  const showCollection = currentStep === 'full' || currentStep === 'collection';
+
+  const visibleAffixes = showAffixes
+    ? affixes.slice(
+        0,
+        currentStep === 'full' || currentStep === 'collection'
+          ? affixes.length
+          : visibleAffixCount || (showPower ? affixes.length : 0),
+      )
+    : [];
+
+  const announceLabel =
+    item.rarity === 'mythic' ? 'MYTHIC FOUND' : 'LEGENDARY FOUND';
 
   return (
-    <View style={[styles.container, isMythic && styles.mythicContainer]}>
-      <Animated.Text
-        entering={ZoomIn.duration(isMythic ? 800 : 500).springify().damping(14)}
-        style={[styles.rarity, { color: nameColor }, isMythic && styles.mythicRarity]}
-      >
-        {rarityLabels[item.rarity]}
-      </Animated.Text>
+    <Pressable style={styles.tapArea} onPress={advance}>
+      {rarityRevealed && (
+        <View style={[styles.colorWash, { backgroundColor: nameColor }]} />
+      )}
 
-      {phase !== 'rarity' && (
-        <Animated.View entering={FadeInDown.duration(350)} style={styles.meta}>
+      <View style={styles.content}>
+        {currentStep === 'locked' && (
+          <Text style={styles.lockedMark}>?</Text>
+        )}
+
+        {currentStep === 'announce' && (
+          <Text style={[styles.announce, { color: nameColor }]}>{announceLabel}</Text>
+        )}
+
+        {showRarity && (
+          <Text style={[styles.rarity, { color: nameColor }]}>
+            {rarityLabels[item.rarity]}
+          </Text>
+        )}
+
+        {showName && (
           <Text style={[styles.name, { color: nameColor }]} numberOfLines={2}>
             {item.name.toUpperCase()}
           </Text>
-          <Text style={styles.baseType}>
-            {getSlotLabel(item.slot).toUpperCase()}
-            {qualityLabel ? ` · ${qualityLabel.toUpperCase()}` : ''}
-          </Text>
-          {item.defense !== undefined && (
-            <Text style={styles.defense}>
-              Defense: <Text style={styles.defenseValue}>{item.defense}</Text>
+        )}
+
+        {item.rarity === 'mythic' && showName && (
+          <View style={styles.mythicMeta}>
+            {isFirstMythic && <Text style={styles.mythicLine}>First Mythic?</Text>}
+            <Text style={styles.mythicLine}>
+              Mythics Found: {collectionStats.mythicsFound}
             </Text>
-          )}
-        </Animated.View>
-      )}
+          </View>
+        )}
 
-      {(phase === 'stats' || phase === 'footer') && groups.length > 0 && (
-        <Animated.View entering={FadeIn.duration(200)} style={styles.divider} />
-      )}
-
-      {(phase === 'stats' || phase === 'footer') &&
-        groups.slice(0, visibleGroupCount).map((group) => (
-          <Animated.View key={group.category} entering={FadeInDown.duration(280)} style={styles.group}>
-            <Text style={styles.groupLabel}>{group.category}</Text>
-            {group.lines.map((line, i) => (
-              <Text key={`${group.category}-${i}`} style={styles.affix}>
+        {visibleAffixes.length > 0 && (
+          <View style={styles.affixBlock}>
+            {visibleAffixes.map((line, i) => (
+              <Text key={`${line}-${i}`} style={styles.affix}>
                 {line}
               </Text>
             ))}
-          </Animated.View>
-        ))}
+          </View>
+        )}
 
-      {showFooter && (
-        <Animated.View entering={FadeIn.duration(300)} style={styles.footer}>
-          <Text style={styles.power}>Power {item.power.toLocaleString()}</Text>
-          <Text style={styles.foundBy}>Found by: {playerName}</Text>
-        </Animated.View>
-      )}
-    </View>
+        {showPower && (
+          <View style={styles.powerBlock}>
+            <Text style={styles.power}>POWER {item.power.toLocaleString()}</Text>
+            {equippedItem && (
+              <Text style={[styles.verdict, { color: POWER_VERDICT_COLORS[verdict] }]}>
+                {POWER_VERDICT_LABELS[verdict]}
+              </Text>
+            )}
+          </View>
+        )}
+
+        {showCollection && (
+          <View style={styles.collectionBlock}>
+            <View style={styles.collectionRow}>
+              <Text style={styles.collectionLabel}>Items Found</Text>
+              <Text style={styles.collectionValue}>{collectionStats.itemsFound}</Text>
+            </View>
+            <View style={styles.collectionRow}>
+              <Text style={styles.collectionLabel}>Legendaries Found</Text>
+              <Text style={[styles.collectionValue, { color: rarityColors.legendary }]}>
+                {collectionStats.legendariesFound}
+              </Text>
+            </View>
+            <View style={styles.collectionRow}>
+              <Text style={styles.collectionLabel}>Mythics Found</Text>
+              <Text style={[styles.collectionValue, { color: rarityColors.mythic }]}>
+                {collectionStats.mythicsFound}
+              </Text>
+            </View>
+          </View>
+        )}
+
+        <Text style={styles.tapHint}>TAP</Text>
+      </View>
+    </Pressable>
   );
 }
 
+const mono = Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' });
+
 const styles = StyleSheet.create({
-  container: {
-    alignItems: 'center',
-    paddingVertical: 24,
-    paddingHorizontal: 20,
+  tapArea: {
     width: '100%',
-    minHeight: 200,
+    minHeight: 360,
+    overflow: 'hidden',
+    borderRadius: 4,
   },
-  mythicContainer: {
+  colorWash: {
+    ...StyleSheet.absoluteFillObject,
+    opacity: 0.12,
+  },
+  content: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingVertical: 32,
+    paddingHorizontal: 24,
+    minHeight: 360,
+  },
+  lockedMark: {
+    fontFamily: mono,
+    fontSize: 48,
+    fontWeight: '200',
+    color: colors.textMuted,
+    letterSpacing: 4,
+    marginBottom: 8,
+  },
+  announce: {
+    fontFamily: mono,
+    fontSize: 24,
+    fontWeight: '800',
+    letterSpacing: 6,
+    textAlign: 'center',
   },
   rarity: {
+    fontFamily: mono,
     fontSize: 22,
     fontWeight: '800',
     letterSpacing: 5,
     textAlign: 'center',
-    marginBottom: 8,
-  },
-  mythicRarity: {
-    fontSize: 26,
-    letterSpacing: 6,
-  },
-  meta: {
-    alignItems: 'center',
-    width: '100%',
+    marginBottom: 12,
   },
   name: {
-    fontSize: 17,
+    fontFamily: mono,
+    fontSize: 18,
     fontWeight: '700',
+    letterSpacing: 2,
     textAlign: 'center',
-    letterSpacing: 1,
-    marginBottom: 4,
-    marginTop: 8,
+    marginBottom: 8,
   },
-  baseType: {
-    fontSize: 11,
-    color: colors.textPrimary,
-    letterSpacing: 1.5,
-    marginBottom: 6,
-  },
-  defense: {
-    fontSize: 12,
-    color: colors.textPrimary,
-    marginBottom: 4,
-  },
-  defenseValue: {
-    color: '#4A9EFF',
-  },
-  divider: {
-    width: '70%',
-    height: 1,
-    backgroundColor: colors.surfaceBorder,
-    marginVertical: 12,
-  },
-  group: {
+  mythicMeta: {
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: 12,
+    gap: 4,
   },
-  groupLabel: {
-    fontSize: 9,
+  mythicLine: {
+    fontFamily: mono,
+    fontSize: 11,
     color: colors.textMuted,
     letterSpacing: 2,
-    marginBottom: 4,
+    textTransform: 'uppercase',
+  },
+  affixBlock: {
+    alignItems: 'center',
+    marginTop: 16,
+    marginBottom: 8,
+    gap: 6,
   },
   affix: {
-    fontSize: 13,
+    fontFamily: mono,
+    fontSize: 14,
     color: '#5B7FFF',
     textAlign: 'center',
     lineHeight: 22,
-    marginBottom: 2,
   },
-  footer: {
+  powerBlock: {
     alignItems: 'center',
-    marginTop: 16,
+    marginTop: 20,
+    gap: 6,
   },
   power: {
-    fontSize: 10,
-    color: colors.textMuted,
-    letterSpacing: 1,
-    marginBottom: 8,
+    fontFamily: mono,
+    fontSize: 13,
+    color: colors.textPrimary,
+    letterSpacing: 2,
+    fontWeight: '700',
   },
-  foundBy: {
+  verdict: {
+    fontFamily: mono,
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 3,
+  },
+  collectionBlock: {
+    marginTop: 24,
+    width: '100%',
+    gap: 10,
+    borderTopWidth: 1,
+    borderTopColor: colors.surfaceBorder,
+    paddingTop: 16,
+  },
+  collectionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  collectionLabel: {
+    fontFamily: mono,
     fontSize: 11,
     color: colors.textMuted,
-    letterSpacing: 0.5,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
+  collectionValue: {
+    fontFamily: mono,
+    fontSize: 14,
+    color: colors.textPrimary,
+    fontWeight: '700',
+  },
+  tapHint: {
+    fontFamily: mono,
+    fontSize: 10,
+    color: colors.textMuted,
+    letterSpacing: 3,
+    marginTop: 24,
   },
 });

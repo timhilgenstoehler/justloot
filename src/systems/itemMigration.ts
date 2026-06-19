@@ -14,6 +14,8 @@ const LEGACY_STAT_MAP: Partial<Record<string, StatId>> = {
 };
 
 export const REMOVED_STAT_IDS = new Set<StatId>([
+  'lootQuality',
+  'goldFind',
   'dustFind',
   'experienceGain',
   'lightRadius',

@@ -33,11 +33,12 @@ function persistedChanged(next: GameState, prev: GameState): boolean {
 
 export function useCloudSync(): void {
   const userId = useAuthStore((s) => s.user?.id);
+  const isDebugSession = useAuthStore((s) => s.isDebugSession);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const syncingRef = useRef(false);
 
   useEffect(() => {
-    if (!userId) return;
+    if (!userId || isDebugSession) return;
 
     const scheduleSync = (state: GameState) => {
       if (timerRef.current) clearTimeout(timerRef.current);
@@ -64,7 +65,7 @@ export function useCloudSync(): void {
       unsub();
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [userId]);
+  }, [userId, isDebugSession]);
 }
 
 export { extractPersisted };

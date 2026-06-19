@@ -1,4 +1,3 @@
-import { RARITIES, getRarityWeightsAtDepth } from '../constants/rarities';
 import {
   BUILD_AFFIX_LABELS,
   RARITY_AFFIX_COUNT,
@@ -18,6 +17,8 @@ import {
 import { calculateItemPower } from './powerCalculator';
 import { clampLegacyStatValue, migrateLegacyStatId, REMOVED_STAT_IDS } from './itemMigration';
 import { STAT_BY_ID } from '../constants/statRegistry';
+import { pickFromRarityWeights } from '../constants/lootPacks';
+import { useDebugStore } from '../store/debugStore';
 import type {
   BuildAffixId,
   Item,
@@ -39,16 +40,6 @@ const SPECIAL_EFFECT_POOL: SpecialEffectId[] = [
   'fireIgnoresArmor',
   'attackTwiceEveryThirdTurn',
 ];
-
-function pickWeightedRarity(weights: Record<Rarity, number>): Rarity {
-  const total = RARITIES.reduce((sum, r) => sum + weights[r], 0);
-  let roll = Math.random() * total;
-  for (const rarity of RARITIES) {
-    roll -= weights[rarity];
-    if (roll <= 0) return rarity;
-  }
-  return 'common';
-}
 
 function generateItemName(slot: Slot): string {
   const prefix = PREFIXES[Math.floor(Math.random() * PREFIXES.length)];
@@ -103,6 +94,7 @@ function rollSecondaryStats(
   rarity: Rarity,
   quality: ItemQuality,
   depth: number,
+  rollPercentile?: number,
 ): SecondaryStat[] {
   const count = RARITY_AFFIX_COUNT[rarity];
   const usedIds = new Set<string>();
@@ -113,7 +105,7 @@ function rollSecondaryStats(
     if (!def) break;
     usedIds.add(def.id);
 
-    const value = rollStatValue(def.id, rarity, quality, depth);
+    const value = rollStatValue(def.id, rarity, quality, depth, rollPercentile);
     if (value <= 0) continue;
 
     stats.push({
@@ -132,6 +124,11 @@ export interface GenerateItemOptions {
   lootBonuses?: LootBonuses;
   forceSlot?: Slot;
   forceRarity?: Rarity;
+  forceQuality?: ItemQuality;
+  /** 0 = bottom of quality band, 1 = top */
+  rollPercentile?: number;
+  /** Override drop weights (e.g. loot packs) */
+  rarityWeights?: Record<Rarity, number>;
 }
 
 export function generateItem(
@@ -155,19 +152,16 @@ export function generateItem(
 
   const lootBonuses = options.lootBonuses ?? { lootQuality: 0, lootRarity: 0 };
   const slot = options.forceSlot ?? ALL_SLOTS[Math.floor(Math.random() * ALL_SLOTS.length)];
-  const weights = getRarityWeightsAtDepth(depth, lootBonuses.lootRarity);
-  const rarity = options.forceRarity ?? pickWeightedRarity(weights);
-  let quality = rollItemQuality(rarity);
-
-  if (lootBonuses.lootQuality > 0 && Math.random() < lootBonuses.lootQuality / 200) {
-    const upgrade: ItemQuality[] = ['normal', 'great', 'perfect', 'ancient'];
-    const idx = upgrade.indexOf(quality);
-    if (idx >= 0 && idx < upgrade.length - 1) quality = upgrade[idx + 1];
-  }
+  const rarity =
+    options.forceRarity ??
+    (options.rarityWeights
+      ? pickFromRarityWeights(options.rarityWeights)
+      : useDebugStore.getState().pickLootRarity(depth, lootBonuses.lootRarity));
+  const quality = options.forceQuality ?? rollItemQuality(rarity);
 
   const name = generateItemName(slot);
-  const defense = rollDefense(slot, rarity, quality, depth);
-  const stats = rollSecondaryStats(slot, rarity, quality, depth);
+  const defense = rollDefense(slot, rarity, quality, depth, options.rollPercentile);
+  const stats = rollSecondaryStats(slot, rarity, quality, depth, options.rollPercentile);
   const buildAffix = rollBuildAffix(rarity, quality);
   const specialEffects = rollSpecialEffects(rarity, quality);
 

@@ -50,6 +50,9 @@ export function PowerHeader({
       </View>
 
       <Text style={styles.powerLabel}>Power {powerScore.toLocaleString()}</Text>
+      {dust !== undefined && (
+        <Text style={styles.dust}>{dust.toLocaleString()} Dust</Text>
+      )}
       {arenaRating !== undefined && (
         <Text style={styles.arena}>Arena {arenaRating}</Text>
       )}
@@ -123,9 +126,10 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   dust: {
-    fontSize: 11,
-    color: colors.textMuted,
-    marginTop: 4,
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.cta,
+    marginTop: 6,
     letterSpacing: 1,
   },
 });

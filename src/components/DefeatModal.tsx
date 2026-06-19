@@ -2,6 +2,7 @@ import { Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from '
 import { CombatSummary } from './CombatSummary';
 import { colors } from '../constants/theme';
 import { useGameStore } from '../store/gameStore';
+import { modalBackdropStyle } from '../utils/modalLayout';
 
 export function DefeatModal() {
   const runPhase = useGameStore((s) => s.runPhase);
@@ -42,12 +43,11 @@ export function DefeatModal() {
 const mono = Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' });
 
 const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
+  backdrop: modalBackdropStyle({
     backgroundColor: 'rgba(0, 0, 0, 0.92)',
     justifyContent: 'center',
     padding: 24,
-  },
+  }),
   card: {
     backgroundColor: '#0D0D12',
     borderRadius: 4,

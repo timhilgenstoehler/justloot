@@ -1,10 +1,13 @@
 import { useRouter } from 'expo-router';
-import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ItemCard } from './ItemCard';
+import { ItemAffixQualityPanel } from './ItemAffixQualityPanel';
 import { getSlotLabel } from '../constants/slots';
 import { colors } from '../constants/theme';
 import { getItemFingerprint } from '../systems/lootGenerator';
-import { canDeleteItem, isNewDiscovery } from '../systems/inventoryUtils';
+import { canSalvageItem, isNewDiscovery } from '../systems/inventoryUtils';
+import { getSalvageDust } from '../utils/lootReveal';
+import { gameAlert } from '../utils/gameAlert';
 import { resolveEquipSlot } from '../systems/inventorySlots';
 import type { InventoryItem, Item, Slot } from '../types/game';
 import { useGameStore } from '../store/gameStore';
@@ -32,22 +35,30 @@ export function ItemDetailModal({ item, mode, equippedSlot, readOnly = false, on
   const equipment = useGameStore((s) => s.equipment);
   const inventory = useGameStore((s) => s.inventory);
   const collection = useGameStore((s) => s.collection);
+  const playerDepth = useGameStore((s) => s.depth);
   const beginEquipItem = useGameStore((s) => s.beginEquipItem);
   const unequipSlot = useGameStore((s) => s.unequipSlot);
   const toggleFavorite = useGameStore((s) => s.toggleFavorite);
-  const deleteInventoryItem = useGameStore((s) => s.deleteInventoryItem);
+  const salvageInventoryItem = useGameStore((s) => s.salvageInventoryItem);
+  const salvageEquippedItem = useGameStore((s) => s.salvageEquippedItem);
   const markCollectionViewed = useGameStore((s) => s.markCollectionViewed);
 
   if (!item) return null;
 
-  const invItem = mode === 'inventory'
-    ? inventory.find((i) => i.id === item.id)
-    : undefined;
+  const invItem =
+    mode === 'inventory'
+      ? inventory.find((i) => i.id === item.id) ??
+        ('acquiredAt' in item ? (item as InventoryItem) : undefined)
+      : undefined;
   const isFavorite = invItem?.favorite ?? false;
-  const foundDepth = invItem?.foundDepth;
+  const foundDepth = invItem?.foundDepth ?? playerDepth;
   const acquiredAt = invItem?.acquiredAt;
   const isNew = isNewDiscovery(item, collection);
-  const canDelete = invItem ? canDeleteItem(invItem, equipment) : false;
+  const canSalvage =
+    mode === 'equipped'
+      ? !!equippedSlot
+      : !!invItem && canSalvageItem(invItem, equipment);
+  const salvageDust = getSalvageDust(item);
 
   const handleOpen = () => {
     if (readOnly) return;
@@ -61,7 +72,7 @@ export function ItemDetailModal({ item, mode, equippedSlot, readOnly = false, on
 
     const resolution = resolveEquipSlot(item, equipment, targetSlot);
     if (resolution.needsSlotChoice && resolution.slotOptions) {
-      Alert.alert(
+      gameAlert(
         'Choose Slot',
         `Which ${item.slot.startsWith('ring') ? 'ring' : 'trinket'} slot?`,
         [
@@ -85,7 +96,7 @@ export function ItemDetailModal({ item, mode, equippedSlot, readOnly = false, on
       return;
     }
     if (result === 'full') {
-      Alert.alert('Inventory Full', 'Make room before equipping — you need a free slot for replaced gear.');
+      gameAlert('Inventory Full', 'Make room before equipping — you need a free slot for replaced gear.');
       return;
     }
     if (result === 'equipped') {
@@ -97,28 +108,41 @@ export function ItemDetailModal({ item, mode, equippedSlot, readOnly = false, on
     if (!equippedSlot) return;
     const result = unequipSlot(equippedSlot);
     if (result === 'full') {
-      Alert.alert('Inventory Full', 'Free up space before unequipping.');
+      gameAlert('Inventory Full', 'Free up space before unequipping.');
       return;
     }
     onClose();
   };
 
-  const handleDelete = () => {
-    if (!canDelete) {
-      Alert.alert('Cannot Delete', isFavorite ? 'Unfavorite this item first.' : 'This item cannot be deleted.');
+  const handleSalvage = () => {
+    if (!canSalvage) {
+      gameAlert(
+        'Cannot Salvage',
+        invItem?.favorite
+          ? 'Unfavorite this item first.'
+          : 'This item cannot be salvaged.',
+      );
       return;
     }
-    Alert.alert('Delete Item', `Permanently delete ${item.name}?`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: () => {
-          deleteInventoryItem(item.id);
-          onClose();
+    gameAlert(
+      'Salvage Item',
+      `Destroy ${item.name} for +${salvageDust} Dust?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Salvage',
+          style: 'destructive',
+          onPress: () => {
+            if (mode === 'equipped' && equippedSlot) {
+              salvageEquippedItem(equippedSlot);
+            } else {
+              salvageInventoryItem(item.id);
+            }
+            onClose();
+          },
         },
-      },
-    ]);
+      ],
+    );
   };
 
   return (
@@ -130,12 +154,14 @@ export function ItemDetailModal({ item, mode, equippedSlot, readOnly = false, on
       onShow={handleOpen}
       onRequestClose={onClose}
     >
-      <Pressable style={styles.backdrop} onPress={onClose}>
-        <Pressable style={styles.card} onPress={(e) => e.stopPropagation()}>
+      <View style={styles.backdrop}>
+        <Pressable style={styles.backdropTap} onPress={onClose} />
+        <View style={styles.card}>
           <ScrollView showsVerticalScrollIndicator={false}>
             {isNew && <Text style={styles.discovery}>NEW DISCOVERY</Text>}
             <ItemCard item={item} />
-            {foundDepth !== undefined && (
+            <ItemAffixQualityPanel item={item} foundDepth={foundDepth} />
+            {invItem && (
               <Text style={styles.meta}>Found at Depth {foundDepth}</Text>
             )}
             {acquiredAt !== undefined && (
@@ -161,23 +187,35 @@ export function ItemDetailModal({ item, mode, equippedSlot, readOnly = false, on
                 <Pressable
                   style={({ pressed }) => [
                     styles.actionBtn,
-                    !canDelete && styles.disabled,
-                    pressed && canDelete && styles.pressed,
+                    !canSalvage && styles.disabled,
+                    pressed && canSalvage && styles.pressed,
                   ]}
-                  onPress={handleDelete}
-                  disabled={!canDelete}
+                  onPress={handleSalvage}
+                  disabled={!canSalvage}
                 >
-                  <Text style={[styles.actionText, styles.deleteText]}>Delete</Text>
+                  <Text style={[styles.actionText, styles.salvageText]}>
+                    Salvage · +{salvageDust} Dust
+                  </Text>
                 </Pressable>
               </>
             )}
             {!readOnly && mode === 'equipped' && equippedSlot && (
-              <Pressable
-                style={({ pressed }) => [styles.actionBtn, pressed && styles.pressed]}
-                onPress={handleUnequip}
-              >
-                <Text style={styles.actionText}>Unequip</Text>
-              </Pressable>
+              <>
+                <Pressable
+                  style={({ pressed }) => [styles.actionBtn, pressed && styles.pressed]}
+                  onPress={handleUnequip}
+                >
+                  <Text style={styles.actionText}>Unequip</Text>
+                </Pressable>
+                <Pressable
+                  style={({ pressed }) => [styles.actionBtn, pressed && styles.pressed]}
+                  onPress={handleSalvage}
+                >
+                  <Text style={[styles.actionText, styles.salvageText]}>
+                    Salvage · +{salvageDust} Dust
+                  </Text>
+                </Pressable>
+              </>
             )}
             <Pressable
               style={({ pressed }) => [styles.actionBtn, pressed && styles.pressed]}
@@ -186,8 +224,8 @@ export function ItemDetailModal({ item, mode, equippedSlot, readOnly = false, on
               <Text style={styles.actionText}>Close</Text>
             </Pressable>
           </View>
-        </Pressable>
-      </Pressable>
+        </View>
+      </View>
     </Modal>
   );
 }
@@ -199,7 +237,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 24,
   },
+  backdropTap: {
+    ...StyleSheet.absoluteFillObject,
+  },
   card: {
+    zIndex: 1,
     backgroundColor: '#0D0D12',
     borderRadius: 4,
     borderWidth: 1,
@@ -247,5 +289,5 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     letterSpacing: 1,
   },
-  deleteText: { color: '#EF4444' },
+  salvageText: { color: '#F59E0B' },
 });

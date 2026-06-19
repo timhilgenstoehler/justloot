@@ -16,12 +16,16 @@ import { simulateCombat } from '../systems/combatSimulator';
 import { generateEnemy } from '../systems/enemyGenerator';
 import { generateItem, getItemFingerprint, migrateItem } from '../systems/lootGenerator';
 import {
-  getBulkDeleteCandidates,
+  canSalvageItem,
+  getBulkSalvageCandidates,
   itemFromInventory,
   toInventoryItem,
 } from '../systems/inventoryUtils';
+import { generatePackItems, getLootPack } from '../systems/lootPackSystem';
 import { resolveEquipSlot } from '../systems/inventorySlots';
 import { calculatePowerScore, sumEquippedLootBonuses } from '../systems/powerCalculator';
+import { formatLootFeedEntry, getSalvageDust } from '../utils/lootReveal';
+import { useDebugStore } from './debugStore';
 import type {
   CollectionCounters,
   CollectionEntry,
@@ -60,10 +64,19 @@ interface GameActions {
   confirmEquipReplace: () => 'ok' | 'full' | 'not_found';
   cancelEquip: () => StashResult;
   stashPendingLoot: () => StashResult;
+  salvagePendingLoot: () => void;
   unequipSlot: (slot: Slot) => StashResult;
   toggleFavorite: (itemId: string) => void;
-  deleteInventoryItem: (itemId: string) => boolean;
-  bulkDeleteByRarity: (rarity: Rarity) => number;
+  salvageInventoryItem: (itemId: string) => number | null;
+  salvageEquippedItem: (slot: Slot) => number | null;
+  bulkSalvageByRarity: (rarity: Rarity) => { count: number; dust: number };
+  purchaseLootPack: (
+    packId: string,
+  ) =>
+    | { ok: true; items: Item[] }
+    | { ok: false; reason: 'insufficient_dust' | 'inventory_full' | 'not_found' };
+  beginPackReveal: (packName: string) => void;
+  closePackReveal: () => void;
   markCollectionViewed: (fingerprint: string) => void;
   dismissResult: () => void;
   clearSalvageToast: () => void;
@@ -132,6 +145,7 @@ const initialState: GameState = {
   },
   arenaOpponentRating: null,
   arenaOpponentId: null,
+  packReveal: null,
 };
 
 function recordCollection(
@@ -325,12 +339,13 @@ export const useGameStore = create<GameStore>()(
       setFeedLog: (entries) => set({ feedLog: entries }),
 
       hydrateFromCloud: (data) => {
+        const current = get();
         const migrated = applyPersistedMigration(data);
         set({
           ...migrated,
           compareRequest: null,
-          pendingLoot: null,
-          showResult: false,
+          pendingLoot: current.showResult ? current.pendingLoot : null,
+          showResult: current.showResult,
           runPhase: 'idle',
           runMode: 'dungeon',
           combatResult: null,
@@ -357,13 +372,13 @@ export const useGameStore = create<GameStore>()(
         const { equipment, depth, selectedDepth, totalRuns, collection, collectionCounters, feedLog, playerName } = state;
         const powerScore = calculatePowerScore(equipment);
         const lootBonuses = sumEquippedLootBonuses(equipment);
-        const item = generateItem(0, { depth: selectedDepth, powerScore, lootBonuses });
+        const lootDepth = useDebugStore.getState().resolveLootDepth(selectedDepth);
+        const item = generateItem(0, { depth: lootDepth, powerScore, lootBonuses });
         const beatFrontier = selectedDepth >= depth;
         const newMaxDepth = beatFrontier ? depth + 1 : depth;
 
         const collected = recordCollection(collection, collectionCounters, item, selectedDepth);
-        const feedText =
-          item.rarity === 'mythic' ? `${playerName} found MYTHIC ${item.name}` : null;
+        const feedText = formatLootFeedEntry(playerName, item, selectedDepth);
 
         set({
           depth: newMaxDepth,
@@ -371,6 +386,7 @@ export const useGameStore = create<GameStore>()(
           totalRuns: totalRuns + 1,
           pendingLoot: item,
           showResult: true,
+          runPhase: 'idle',
           combatResult: null,
           combatLogIndex: 0,
           collection: collected.collection,
@@ -633,6 +649,19 @@ export const useGameStore = create<GameStore>()(
         return 'ok';
       },
 
+      salvagePendingLoot: () => {
+        const { pendingLoot, dust } = get();
+        if (!pendingLoot) return;
+        const gained = getSalvageDust(pendingLoot);
+        set({
+          dust: dust + gained,
+          pendingLoot: null,
+          showResult: false,
+          runPhase: 'idle',
+          lastSalvageDust: gained,
+        });
+      },
+
       unequipSlot: (slot) => {
         const { equipment, inventory, depth } = get();
         const item = equipment[slot];
@@ -657,21 +686,77 @@ export const useGameStore = create<GameStore>()(
         });
       },
 
-      deleteInventoryItem: (itemId) => {
-        const { inventory, equipment } = get();
+      salvageInventoryItem: (itemId) => {
+        const { inventory, equipment, dust } = get();
         const item = inventory.find((i) => i.id === itemId);
-        if (!item || item.favorite) return false;
-        if (Object.values(equipment).some((e) => e?.id === itemId)) return false;
-        set({ inventory: inventory.filter((i) => i.id !== itemId) });
-        return true;
+        if (!item || !canSalvageItem(item, equipment)) return null;
+        const gained = getSalvageDust(item);
+        set({
+          inventory: inventory.filter((i) => i.id !== itemId),
+          dust: dust + gained,
+          lastSalvageDust: gained,
+        });
+        return gained;
       },
 
-      bulkDeleteByRarity: (rarity) => {
-        const { inventory, equipment } = get();
-        const candidates = getBulkDeleteCandidates(inventory, rarity, equipment);
+      salvageEquippedItem: (slot) => {
+        const { equipment, dust } = get();
+        const item = equipment[slot];
+        if (!item) return null;
+        const gained = getSalvageDust(item);
+        const nextEquipment = { ...equipment };
+        delete nextEquipment[slot];
+        set({
+          equipment: nextEquipment,
+          dust: dust + gained,
+          lastSalvageDust: gained,
+        });
+        return gained;
+      },
+
+      bulkSalvageByRarity: (rarity) => {
+        const { inventory, equipment, dust } = get();
+        const candidates = getBulkSalvageCandidates(inventory, rarity, equipment);
+        if (candidates.length === 0) return { count: 0, dust: 0 };
         const ids = new Set(candidates.map((i) => i.id));
-        set({ inventory: inventory.filter((i) => !ids.has(i.id)) });
-        return candidates.length;
+        const gained = candidates.reduce((sum, item) => sum + getSalvageDust(item), 0);
+        set({
+          inventory: inventory.filter((i) => !ids.has(i.id)),
+          dust: dust + gained,
+          lastSalvageDust: gained,
+        });
+        return { count: candidates.length, dust: gained };
+      },
+
+      purchaseLootPack: (packId) => {
+        const pack = getLootPack(packId);
+        if (!pack) return { ok: false, reason: 'not_found' as const };
+        const state = get();
+        if (state.dust < pack.dustCost) {
+          return { ok: false, reason: 'insufficient_dust' as const };
+        }
+        if (state.inventory.length + pack.cardCount > INVENTORY_CAPACITY) {
+          return { ok: false, reason: 'inventory_full' as const };
+        }
+        const items = generatePackItems(pack, state.depth, state.equipment);
+        const inventoryItems = items.map((item) => toInventoryItem(item, state.depth));
+        set({
+          dust: state.dust - pack.dustCost,
+          inventory: [...state.inventory, ...inventoryItems],
+          packReveal: {
+            packName: state.packReveal?.packName ?? pack.name,
+            items,
+          },
+        });
+        return { ok: true, items };
+      },
+
+      beginPackReveal: (packName) => {
+        set({ packReveal: { packName, items: null } });
+      },
+
+      closePackReveal: () => {
+        set({ packReveal: null });
       },
 
       markCollectionViewed: (fingerprint) => {

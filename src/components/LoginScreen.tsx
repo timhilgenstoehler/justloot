@@ -14,6 +14,7 @@ import { colors } from '../constants/theme';
 import { lootLogo } from '../constants/lootLogo';
 import { isSupabaseConfigured } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
+import { isDebugEnvironment } from '../utils/isDebugEnvironment';
 
 type AuthMode = 'signin' | 'signup';
 
@@ -38,6 +39,7 @@ export function LoginScreen() {
   const signIn = useAuthStore((s) => s.signIn);
   const signUp = useAuthStore((s) => s.signUp);
   const signInAsGuest = useAuthStore((s) => s.signInAsGuest);
+  const enterDebugSession = useAuthStore((s) => s.enterDebugSession);
   const clearError = useAuthStore((s) => s.clearError);
 
   const handleSubmit = async () => {
@@ -161,6 +163,31 @@ export function LoginScreen() {
         <Text style={styles.guestHint}>
           One tap — anonymous account, progress saved to cloud on this device.
         </Text>
+
+        {isDebugEnvironment() && mode === 'signup' && (
+          <>
+            <View style={styles.dividerRow}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>dev</Text>
+              <View style={styles.dividerLine} />
+            </View>
+            <Pressable
+              style={({ pressed }) => [
+                styles.debugButton,
+                pressed && styles.buttonPressed,
+              ]}
+              onPress={() => {
+                clearError();
+                enterDebugSession();
+              }}
+            >
+              <Text style={styles.debugButtonText}>Enter Debug Mode</Text>
+            </Pressable>
+            <Text style={styles.debugHint}>
+              Local only — fresh character, custom loot odds, no cloud save.
+            </Text>
+          </>
+        )}
       </View>
     </KeyboardAvoidingView>
   );
@@ -301,5 +328,29 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     marginTop: 12,
     paddingHorizontal: 8,
+  },
+  debugButton: {
+    borderRadius: 6,
+    paddingVertical: 14,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#F59E0B',
+    backgroundColor: '#1A1408',
+    marginTop: 4,
+  },
+  debugButtonText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#F59E0B',
+    letterSpacing: 1.5,
+  },
+  debugHint: {
+    fontSize: 10,
+    color: colors.textMuted,
+    textAlign: 'center',
+    lineHeight: 15,
+    marginTop: 10,
+    paddingHorizontal: 8,
+    fontStyle: 'italic',
   },
 });

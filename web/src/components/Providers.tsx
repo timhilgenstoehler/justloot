@@ -32,18 +32,24 @@ export function Providers({ children }: { children: ReactNode }) {
 
   return (
     <SafeAreaProvider>
-      {!hydrated ? (
-        <View style={styles.boot}>
-          <ActivityIndicator color={colors.cta} size="large" />
-        </View>
-      ) : (
-        <AuthGate>{children}</AuthGate>
-      )}
+      <View style={styles.shell}>
+        {!hydrated ? (
+          <View style={styles.boot}>
+            <ActivityIndicator color={colors.cta} size="large" />
+          </View>
+        ) : (
+          <AuthGate>{children}</AuthGate>
+        )}
+      </View>
     </SafeAreaProvider>
   );
 }
 
 const styles = StyleSheet.create({
+  shell: {
+    flex: 1,
+    minHeight: '100%',
+  },
   boot: {
     flex: 1,
     alignItems: 'center',

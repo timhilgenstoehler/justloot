@@ -19,7 +19,7 @@ export function EquippedTab({ onItemPress }: EquippedTabProps) {
 
   return (
     <ScrollView showsVerticalScrollIndicator={false}>
-      <Text style={styles.hint}>Tap a slot to view details or unequip.</Text>
+      <Text style={styles.hint}>Tap a slot to view, unequip, or salvage.</Text>
       <View style={styles.grid}>
         <EquipmentColumn
           slots={LEFT_SLOTS}

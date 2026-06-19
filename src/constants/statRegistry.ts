@@ -67,11 +67,11 @@ export const STAT_REGISTRY: StatDefinition[] = [
   { id: 'allResist', category: 'defensive', format: (v) => `+${v} All Resistances`, powerPerPoint: 4, isPercent: true, hardCap: 30, rollByRarity: ALL_RESIST_ROLLS },
   { id: 'attackSpeed', category: 'offensive', format: (v) => `+${v}% Attack Speed`, powerPerPoint: 2.5, isPercent: true, slots: ['weapon', 'gloves', 'ring1', 'ring2'], rollByRarity: { common: { min: 1, max: 6 }, rare: { min: 3, max: 10 }, epic: { min: 5, max: 12 }, legendary: { min: 8, max: 18 }, mythic: { min: 12, max: 25 } } },
   { id: 'thorns', category: 'defensive', format: (v) => `Attacker Takes ${v} Damage`, powerPerPoint: 1.5, rollByRarity: { common: { min: 1, max: 4 }, rare: { min: 2, max: 6 }, epic: { min: 4, max: 10 }, legendary: { min: 6, max: 15 }, mythic: { min: 10, max: 20 } } },
-  { id: 'lootQuality', category: 'utility', format: (v) => `+${v}% Loot Quality`, powerPerPoint: 2, isPercent: true, slots: ['ring1', 'ring2', 'necklace', 'trinket1', 'trinket2'], rollByRarity: { common: { min: 1, max: 4 }, rare: { min: 2, max: 6 }, epic: { min: 4, max: 8 }, legendary: { min: 6, max: 15 }, mythic: { min: 10, max: 20 } } },
   { id: 'lootRarity', category: 'utility', format: (v) => `+${v}% Loot Rarity`, powerPerPoint: 3, isPercent: true, slots: ['ring1', 'ring2', 'necklace', 'trinket1', 'trinket2'], rollByRarity: { common: { min: 1, max: 4 }, rare: { min: 2, max: 6 }, epic: { min: 4, max: 8 }, legendary: { min: 6, max: 15 }, mythic: { min: 10, max: 20 } } },
-  { id: 'goldFind', category: 'utility', format: (v) => `+${v}% Gold Find`, powerPerPoint: 1.2, isPercent: true, slots: ['ring1', 'ring2', 'waist', 'boots'], rollByRarity: { common: { min: 3, max: 10 }, rare: { min: 6, max: 15 }, epic: { min: 10, max: 22 }, legendary: { min: 15, max: 30 }, mythic: { min: 20, max: 40 } } },
   { id: 'arenaRatingGain', category: 'utility', format: (v) => `+${v}% Arena Rating Gain`, powerPerPoint: 2.5, isPercent: true, slots: ['trinket1', 'trinket2', 'necklace'], rollByRarity: { common: { min: 1, max: 5 }, rare: { min: 3, max: 8 }, epic: { min: 5, max: 12 }, legendary: { min: 8, max: 18 }, mythic: { min: 12, max: 25 } } },
   // Legacy — migration display only
+  { id: 'lootQuality', category: 'utility', format: (v) => `+${v}% Loot Quality`, powerPerPoint: 2, isPercent: true, deprecated: true },
+  { id: 'goldFind', category: 'utility', format: (v) => `+${v}% Gold Find`, powerPerPoint: 1.2, isPercent: true, deprecated: true },
   { id: 'dustFind', category: 'utility', format: (v) => `+${v}% Dust Find`, powerPerPoint: 1.5, isPercent: true, deprecated: true },
   { id: 'experienceGain', category: 'utility', format: (v) => `+${v}% Experience Gain`, powerPerPoint: 1, isPercent: true, deprecated: true },
   { id: 'bossDamage', category: 'offensive', format: (v) => `+${v}% Boss Damage`, powerPerPoint: 3.5, isPercent: true, deprecated: true },
@@ -184,6 +184,7 @@ export function rollStatValue(
   rarity: Rarity,
   quality: ItemQuality,
   depth: number,
+  rollPercentile?: number,
 ): number {
   const def = STAT_BY_ID[statId];
   if (!def?.rollByRarity) return 1;
@@ -193,7 +194,11 @@ export function rollStatValue(
 
   const depthBonus = 1 + Math.log10(Math.max(1, depth)) * 0.15;
   const band = QUALITY_ROLL_BAND[quality];
-  const t = band.minPct + Math.random() * (band.maxPct - band.minPct);
+  const t =
+    rollPercentile !== undefined
+      ? band.minPct +
+        Math.max(0, Math.min(1, rollPercentile)) * (band.maxPct - band.minPct)
+      : band.minPct + Math.random() * (band.maxPct - band.minPct);
 
   let value = range.min + (range.max - range.min) * t;
   value *= depthBonus;
@@ -203,7 +208,13 @@ export function rollStatValue(
   return Math.max(1, Math.round(value));
 }
 
-export function rollDefense(slot: Slot, rarity: Rarity, quality: ItemQuality, depth: number): number | undefined {
+export function rollDefense(
+  slot: Slot,
+  rarity: Rarity,
+  quality: ItemQuality,
+  depth: number,
+  rollPercentile?: number,
+): number | undefined {
   if (!ARMOR_SLOTS.includes(slot)) return undefined;
 
   const baseByRarity: Record<Rarity, number> = {
@@ -216,7 +227,11 @@ export function rollDefense(slot: Slot, rarity: Rarity, quality: ItemQuality, de
 
   const base = baseByRarity[rarity] * (1 + Math.log10(Math.max(1, depth)) * 0.2);
   const band = QUALITY_ROLL_BAND[quality];
-  const t = band.minPct + Math.random() * (band.maxPct - band.minPct);
+  const t =
+    rollPercentile !== undefined
+      ? band.minPct +
+        Math.max(0, Math.min(1, rollPercentile)) * (band.maxPct - band.minPct)
+      : band.minPct + Math.random() * (band.maxPct - band.minPct);
   return Math.max(1, Math.round(base * (0.8 + t * 0.8)));
 }
 

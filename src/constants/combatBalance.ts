@@ -32,12 +32,12 @@ export function scaleEnemyStat(depth: number): {
   const early = EARLY_DEPTH_STATS[d];
   if (early) return early;
 
-  // Exponential curve from depth 4+ so late game stays threatening as loot snowballs
+  // Exponential curve from depth 4+ — tuned so full legendary (D50 gear) pushes past ~D30
   const t = d - 3;
-  const health = Math.round(40 + t * 10 + Math.pow(t, 1.5) * 6);
-  const attack = Math.round(9 + t * 3 + Math.pow(t, 1.45) * 3.2);
-  const defense = Math.round(2 + t * 0.9 + Math.pow(t, 1.2) * 1.4);
-  const speed = Math.round(9 + t * 0.55 + Math.pow(t, 0.9) * 0.5);
+  const health = Math.round(40 + t * 10 + Math.pow(t, 1.48) * 4.8);
+  const attack = Math.round(9 + t * 3 + Math.pow(t, 1.4) * 2.7);
+  const defense = Math.round(2 + t * 0.9 + Math.pow(t, 1.17) * 1.2);
+  const speed = Math.round(9 + t * 0.55 + Math.pow(t, 0.9) * 0.45);
 
   return { health, attack, defense, speed };
 }

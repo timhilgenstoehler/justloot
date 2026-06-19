@@ -7,6 +7,7 @@ import {
 } from '../services/leaderboardService';
 import { loadCloudSave } from '../services/syncService';
 import { useGameStore } from './gameStore';
+import { useDebugStore } from './debugStore';
 
 interface AuthState {
   session: Session | null;
@@ -14,10 +15,12 @@ interface AuthState {
   initialized: boolean;
   loading: boolean;
   error: string | null;
+  isDebugSession: boolean;
   initialize: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, displayName: string) => Promise<void>;
   signInAsGuest: () => Promise<void>;
+  enterDebugSession: () => void;
   signOut: () => Promise<void>;
   clearError: () => void;
 }
@@ -69,6 +72,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   initialized: false,
   loading: false,
   error: null,
+  isDebugSession: false,
 
   initialize: async () => {
     if (!isSupabaseConfigured()) {
@@ -99,7 +103,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         set({ session, user: session?.user ?? null });
 
         if (event === 'SIGNED_IN' && session) {
-          set({ loading: true, error: null });
+          set({ loading: true, error: null, isDebugSession: false });
           try {
             await hydrateUserSession(session);
           } catch (err) {
@@ -122,7 +126,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   signIn: async (email, password) => {
-    set({ loading: true, error: null });
+    set({ loading: true, error: null, isDebugSession: false });
     try {
       const supabase = getSupabase();
       const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -136,7 +140,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   signUp: async (email, password, displayName) => {
-    set({ loading: true, error: null });
+    set({ loading: true, error: null, isDebugSession: false });
     try {
       const supabase = getSupabase();
       const { error } = await supabase.auth.signUp({
@@ -156,7 +160,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   signInAsGuest: async () => {
-    set({ loading: true, error: null });
+    set({ loading: true, error: null, isDebugSession: false });
     try {
       const supabase = getSupabase();
       const { error } = await supabase.auth.signInAnonymously({
@@ -178,7 +182,24 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
+  enterDebugSession: () => {
+    useDebugStore.getState().enterDebug();
+    set({
+      session: null,
+      user: null,
+      isDebugSession: true,
+      initialized: true,
+      loading: false,
+      error: null,
+    });
+  },
+
   signOut: async () => {
+    if (get().isDebugSession) {
+      useDebugStore.getState().exitDebug();
+      set({ session: null, user: null, isDebugSession: false, error: null });
+      return;
+    }
     const supabase = getSupabase();
     await supabase.auth.signOut();
     set({ session: null, user: null, error: null });

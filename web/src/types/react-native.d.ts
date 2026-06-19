@@ -30,6 +30,7 @@ declare module 'react-native' {
     create<T extends Record<string, any>>(styles: T): T;
     flatten(style: any): any;
     absoluteFillObject: Record<string, any>;
+    absoluteFill: Record<string, any>;
   };
 
   export const Platform: {

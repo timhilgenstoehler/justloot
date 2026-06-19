@@ -105,6 +105,21 @@ export function getBulkDeleteCandidates(
   );
 }
 
+export function canSalvageItem(
+  item: InventoryItem,
+  equipment: Partial<Record<Slot, Item>>,
+): boolean {
+  return canDeleteItem(item, equipment);
+}
+
+export function getBulkSalvageCandidates(
+  items: InventoryItem[],
+  rarity: Rarity,
+  equipment: Partial<Record<Slot, Item>>,
+): InventoryItem[] {
+  return getBulkDeleteCandidates(items, rarity, equipment);
+}
+
 export function isNewDiscovery(
   item: Item,
   collection: Record<string, CollectionEntry>,
