@@ -1,13 +1,19 @@
-import { Platform } from 'react-native';
+import { Platform, type ViewStyle } from 'react-native';
 
-/** Ensures full-viewport modal backdrops on react-native-web. */
-export const modalBackdropMinHeight =
-  Platform.OS === 'web' ? ('100vh' as const) : undefined;
+/** Visible viewport on mobile browsers (Safari toolbar visible). */
+const webViewportStyle: ViewStyle | undefined =
+  Platform.OS === 'web'
+    ? ({
+        height: '100svh',
+        minHeight: '100svh',
+        maxHeight: '100svh',
+      } as ViewStyle)
+    : undefined;
 
-export function modalBackdropStyle(extra: Record<string, unknown> = {}) {
+export function modalBackdropStyle(extra: Record<string, unknown> = {}): ViewStyle {
   return {
     flex: 1,
-    ...(modalBackdropMinHeight ? { minHeight: modalBackdropMinHeight } : {}),
+    ...webViewportStyle,
     ...extra,
-  };
+  } as ViewStyle;
 }

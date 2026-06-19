@@ -1,4 +1,5 @@
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useEffect, useState } from 'react';
 import { ItemReveal } from './ItemReveal';
 import { colors } from '../constants/theme';
@@ -60,7 +61,7 @@ export function PackRevealModal() {
       statusBarTranslucent
       onRequestClose={handleClose}
     >
-      <View style={modalBackdropStyle(styles.backdrop)}>
+      <SafeAreaView style={modalBackdropStyle(styles.backdrop)} edges={['top', 'bottom']}>
         <View style={styles.inner}>
           <Text style={styles.packName}>{packName}</Text>
 
@@ -95,7 +96,7 @@ export function PackRevealModal() {
             </View>
           )}
         </View>
-      </View>
+      </SafeAreaView>
     </Modal>
   );
 }

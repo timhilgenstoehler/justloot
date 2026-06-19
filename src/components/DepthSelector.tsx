@@ -22,6 +22,7 @@ interface DepthSelectorProps {
 const CHIP_SIZE = 40;
 const CHIP_GAP = 6;
 const PHONE_MAX_WIDTH = 430;
+const ARROW_WIDTH = 32;
 
 export function DepthSelector({
   maxUnlocked,
@@ -36,47 +37,89 @@ export function DepthSelector({
 
   const rowWidth = depths.length * CHIP_SIZE + Math.max(0, depths.length - 1) * CHIP_GAP;
   const viewportWidth = Math.min(windowWidth, PHONE_MAX_WIDTH) - SCREEN_PADDING * 2;
+  const scrollWidth = Math.max(0, viewportWidth - ARROW_WIDTH * 2 - 8);
+  const canGoPrev = selectedDepth > 1;
+  const canGoNext = selectedDepth < maxUnlocked;
 
   useEffect(() => {
     const chipOffset = (selectedDepth - 1) * (CHIP_SIZE + CHIP_GAP);
-    const centered = chipOffset - viewportWidth / 2 + CHIP_SIZE / 2;
-    const maxScroll = Math.max(0, rowWidth - viewportWidth);
+    const centered = chipOffset - scrollWidth / 2 + CHIP_SIZE / 2;
+    const maxScroll = Math.max(0, rowWidth - scrollWidth);
     scrollRef.current?.scrollTo({
       x: Math.min(maxScroll, Math.max(0, centered)),
       animated: true,
     });
-  }, [selectedDepth, viewportWidth, rowWidth]);
+  }, [selectedDepth, scrollWidth, rowWidth]);
+
+  const stepDepth = (delta: number) => {
+    const next = Math.min(maxUnlocked, Math.max(1, selectedDepth + delta));
+    if (next !== selectedDepth) onSelect(next);
+  };
 
   return (
     <View style={styles.container}>
       <Text style={styles.label}>Choose Depth</Text>
-      <ScrollView
-        ref={scrollRef}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={[styles.scroll, { width: viewportWidth }]}
-        contentContainerStyle={styles.scrollRow}
-        nestedScrollEnabled
-      >
-        {depths.map((d) => {
-          const isSelected = d === selectedDepth;
-          return (
-            <Pressable
-              key={d}
-              style={({ pressed }) => [
-                styles.chip,
-                isSelected && styles.chipSelected,
-                pressed && !disabled && styles.chipPressed,
-                disabled && styles.chipDisabled,
-              ]}
-              onPress={() => onSelect(d)}
-              disabled={disabled}
-            >
-              <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>{d}</Text>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
+      <View style={[styles.row, { width: viewportWidth }]}>
+        <Pressable
+          style={({ pressed }) => [
+            styles.arrow,
+            !canGoPrev && styles.arrowDisabled,
+            pressed && canGoPrev && !disabled && styles.arrowPressed,
+          ]}
+          onPress={() => stepDepth(-1)}
+          disabled={disabled || !canGoPrev}
+          hitSlop={8}
+          accessibilityLabel="Previous depth"
+        >
+          <Text style={[styles.arrowText, !canGoPrev && styles.arrowTextDisabled]}>‹</Text>
+        </Pressable>
+
+        <ScrollView
+          ref={scrollRef}
+          horizontal
+          showsHorizontalScrollIndicator={Platform.OS === 'web'}
+          style={[styles.scroll, { width: scrollWidth }]}
+          contentContainerStyle={[styles.scrollRow, { width: rowWidth }]}
+          nestedScrollEnabled
+          scrollEventThrottle={16}
+          decelerationRate="fast"
+          {...(Platform.OS === 'web' ? { dataSet: { horizontalScroll: 'true' } } : {})}
+        >
+          {depths.map((d) => {
+            const isSelected = d === selectedDepth;
+            return (
+              <Pressable
+                key={d}
+                style={({ pressed }) => [
+                  styles.chip,
+                  isSelected && styles.chipSelected,
+                  pressed && !disabled && styles.chipPressed,
+                  disabled && styles.chipDisabled,
+                ]}
+                onPress={() => onSelect(d)}
+                disabled={disabled}
+                delayPressIn={100}
+              >
+                <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>{d}</Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+
+        <Pressable
+          style={({ pressed }) => [
+            styles.arrow,
+            !canGoNext && styles.arrowDisabled,
+            pressed && canGoNext && !disabled && styles.arrowPressed,
+          ]}
+          onPress={() => stepDepth(1)}
+          disabled={disabled || !canGoNext}
+          hitSlop={8}
+          accessibilityLabel="Next depth"
+        >
+          <Text style={[styles.arrowText, !canGoNext && styles.arrowTextDisabled]}>›</Text>
+        </Pressable>
+      </View>
       <Text style={styles.preview} numberOfLines={2}>
         Enemy preview — HP {previewStats.health} · ATK {previewStats.attack}
       </Text>
@@ -101,9 +144,47 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 8,
   },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  arrow: {
+    width: ARROW_WIDTH,
+    height: CHIP_SIZE,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: colors.surfaceBorder,
+    backgroundColor: '#14141A',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  arrowDisabled: {
+    opacity: 0.35,
+  },
+  arrowPressed: {
+    opacity: 0.8,
+    backgroundColor: '#1A1810',
+  },
+  arrowText: {
+    fontSize: 22,
+    fontWeight: '600',
+    color: colors.cta,
+    lineHeight: 24,
+    marginTop: -2,
+  },
+  arrowTextDisabled: {
+    color: colors.textMuted,
+  },
   scroll: {
     flexGrow: 0,
-    ...(Platform.OS === 'web' ? { overflowX: 'auto' as const } : null),
+    ...(Platform.OS === 'web'
+      ? {
+          overflowX: 'scroll' as const,
+          touchAction: 'pan-x' as const,
+          WebkitOverflowScrolling: 'touch' as const,
+        }
+      : null),
   },
   scrollRow: {
     flexDirection: 'row',

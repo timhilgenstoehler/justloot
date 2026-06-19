@@ -8,7 +8,9 @@ import {
   StyleSheet,
   Text,
   View,
+  type ViewStyle,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { CombatHealthBar } from './CombatHealthBar';
 import { CombatSummary } from './CombatSummary';
 import { LootRevealFlow } from './LootRevealFlow';
@@ -142,7 +144,10 @@ export function CombatOverlay() {
 
   return (
     <Modal visible animationType="fade" transparent statusBarTranslucent>
-      <View style={showLootReveal ? styles.lootOverlay : styles.overlay}>
+      <SafeAreaView
+        style={showLootReveal ? styles.lootOverlay : styles.overlay}
+        edges={['top', 'bottom']}
+      >
         {showLootReveal ? (
           <LootRevealFlow />
         ) : combatResult ? (
@@ -220,7 +225,7 @@ export function CombatOverlay() {
       )}
           </>
         ) : null}
-      </View>
+      </SafeAreaView>
     </Modal>
   );
 }
@@ -230,14 +235,14 @@ const mono = Platform.select({ ios: 'Menlo', android: 'monospace', default: 'mon
 const styles = StyleSheet.create({
   overlay: modalBackdropStyle({
     backgroundColor: 'rgba(8, 8, 12, 0.97)',
-    padding: 20,
-    paddingTop: 56,
-    paddingBottom: 24,
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'web' ? 16 : 12,
+    paddingBottom: 8,
     overflow: 'hidden',
-  }),
+  }) as ViewStyle,
   lootOverlay: modalBackdropStyle({
     backgroundColor: 'rgba(0, 0, 0, 0.92)',
-  }),
+  }) as ViewStyle,
   location: {
     fontFamily: mono,
     fontSize: 13,

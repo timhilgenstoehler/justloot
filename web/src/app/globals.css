@@ -34,10 +34,17 @@ body {
   margin: 0 auto;
   background: #0b0b0f;
   position: relative;
-  overflow-x: hidden;
+  overflow-x: clip;
   box-shadow: 0 0 60px rgba(0, 0, 0, 0.45);
   display: flex;
   flex-direction: column;
+}
+
+/* RN Web horizontal scroll — keep touch pan working inside phone shell */
+.phone-shell [data-horizontal-scroll='true'] {
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
+  overscroll-behavior-x: contain;
 }
 
 @media (min-width: 480px) {
@@ -57,10 +64,12 @@ body [role='dialog'] {
   z-index: 9999 !important;
 }
 
-/* Ensure modal layer fills viewport on desktop */
+/* Ensure modal layer fits visible viewport on mobile Safari */
 body [role='dialog'] > div {
-  min-height: 100vh;
-  min-height: 100dvh;
+  height: 100svh;
+  max-height: 100svh;
+  min-height: 100svh;
+  overflow: hidden;
 }
 input,
 textarea,
