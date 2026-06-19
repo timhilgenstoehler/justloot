@@ -11,7 +11,7 @@ import {
 import { CombatHealthBar } from './CombatHealthBar';
 import { CombatSummary } from './CombatSummary';
 import { colors, rarityColors } from '../constants/theme';
-import type { CombatLogLine } from '../types/game';
+import type { CombatLogLine, CombatResult } from '../types/game';
 import { useGameStore } from '../store/gameStore';
 
 const TARGET_PLAYBACK_MS = 10000;
@@ -37,17 +37,6 @@ function getLineColor(line: CombatLogLine): string {
 }
 
 function LogLine({ line }: { line: CombatLogLine }) {
-  if (line.type === 'health' && line.healthLabel && line.healthCurrent !== undefined && line.healthMax !== undefined) {
-    return (
-      <CombatHealthBar
-        label={line.healthLabel}
-        current={line.healthCurrent}
-        max={line.healthMax}
-        compact
-      />
-    );
-  }
-
   const color = getLineColor(line);
   if (line.text === '') return <View style={styles.spacer} />;
   return (
@@ -55,6 +44,16 @@ function LogLine({ line }: { line: CombatLogLine }) {
       {line.text}
     </Text>
   );
+}
+
+function getLatestHp(visibleLines: CombatLogLine[], combatResult: CombatResult) {
+  const latest = visibleLines.length > 0 ? visibleLines[visibleLines.length - 1] : null;
+  return {
+    playerHp: latest?.playerHp ?? combatResult.playerMaxHp,
+    playerMaxHp: latest?.playerMaxHp ?? combatResult.playerMaxHp,
+    enemyHp: latest?.enemyHp ?? combatResult.enemyMaxHp,
+    enemyMaxHp: latest?.enemyMaxHp ?? combatResult.enemyMaxHp,
+  };
 }
 
 export function CombatOverlay() {
@@ -77,8 +76,10 @@ export function CombatOverlay() {
   const showOverlay = isPlayingCombat || isReviewingVictory;
 
   const visibleLines = combatResult?.log.slice(0, combatLogIndex) ?? [];
-  const displayLines = visibleLines.filter((line) => line.type !== 'outcome');
+  const displayLines = visibleLines.filter((line) => line.type !== 'outcome' && line.type !== 'health');
   const isComplete = combatResult !== null && combatLogIndex >= combatResult.log.length;
+  const hp = combatResult ? getLatestHp(visibleLines, combatResult) : null;
+  const enemyLabel = combatResult?.enemyName.toUpperCase() ?? 'ENEMY';
 
   const handlePlaybackComplete = useCallback(() => {
     if (finishedRef.current || !combatResult) return;
@@ -115,9 +116,7 @@ export function CombatOverlay() {
     const extraPause =
       currentLine?.type === 'round' || currentLine?.type === 'outcome'
         ? 100
-        : currentLine?.type === 'health'
-          ? 60
-          : 0;
+        : 0;
 
     const timer = setTimeout(() => advanceCombatLog(), baseDelay + extraPause);
     return () => clearTimeout(timer);
@@ -140,6 +139,27 @@ export function CombatOverlay() {
       <Text style={styles.depth}>Depth {combatResult.depth}</Text>
 
       <View style={styles.terminal}>
+        {hp && (
+          <View style={styles.healthRow}>
+            <View style={styles.healthCol}>
+              <CombatHealthBar
+                label="YOU"
+                current={hp.playerHp}
+                max={hp.playerMaxHp}
+                compact
+              />
+            </View>
+            <View style={[styles.healthCol, styles.healthColEnemy]}>
+              <CombatHealthBar
+                label={enemyLabel}
+                current={hp.enemyHp}
+                max={hp.enemyMaxHp}
+                compact
+                align="right"
+              />
+            </View>
+          </View>
+        )}
         <FlatList
           ref={listRef}
           data={displayLines}
@@ -229,6 +249,21 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: '#0A0A0E',
     padding: 12,
+  },
+  healthRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 10,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.surfaceBorder,
+  },
+  healthCol: {
+    flex: 1,
+    minWidth: 0,
+  },
+  healthColEnemy: {
+    alignItems: 'flex-end',
   },
   logContent: {
     paddingTop: 4,
