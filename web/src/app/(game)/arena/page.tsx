@@ -1,5 +1,8 @@
 'use client';
 
-import { createGameScreen } from '@/lib/createGameScreen';
+import ArenaScreen from '../../../../../app/arena';
+import { GameScreen } from '@/lib/createGameScreen';
 
-export default createGameScreen('../../../../../app/arena');
+export default function ArenaPage() {
+  return <GameScreen Screen={ArenaScreen} />;
+}

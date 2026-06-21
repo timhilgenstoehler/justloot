@@ -1,5 +1,8 @@
 'use client';
 
-import { createGameScreen } from '@/lib/createGameScreen';
+import GearScreen from '../../../../../app/(tabs)/gear';
+import { GameScreen } from '@/lib/createGameScreen';
 
-export default createGameScreen('../../../../../app/(tabs)/gear');
+export default function GearPage() {
+  return <GameScreen Screen={GearScreen} />;
+}

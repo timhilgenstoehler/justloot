@@ -1,5 +1,8 @@
 'use client';
 
-import { createGameScreen } from '@/lib/createGameScreen';
+import CraftScreen from '../../../../../app/(tabs)/craft';
+import { GameScreen } from '@/lib/createGameScreen';
 
-export default createGameScreen('../../../../../app/(tabs)/craft');
+export default function CraftPage() {
+  return <GameScreen Screen={CraftScreen} />;
+}

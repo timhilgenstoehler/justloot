@@ -1,5 +1,8 @@
 'use client';
 
-import { createGameScreen } from '@/lib/createGameScreen';
+import CharacterScreen from '../../../../../app/(tabs)/index';
+import { GameScreen } from '@/lib/createGameScreen';
 
-export default createGameScreen('../../../../../app/(tabs)/index');
+export default function PlayPage() {
+  return <GameScreen Screen={CharacterScreen} />;
+}
