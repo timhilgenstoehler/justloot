@@ -8,6 +8,9 @@ export function SiteHeader() {
         JUST LOOT
       </Link>
       <nav className={styles.nav} aria-label="Main">
+        <Link href="/play" className={styles.playButton}>
+          Play on Web
+        </Link>
         <a href="#loop">Loop</a>
         <a href="#loot">Loot</a>
         <a href="#arena">Arena</a>

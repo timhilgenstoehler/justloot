@@ -12,7 +12,9 @@
     "@vercel/analytics": "^2.0.1",
     "next": "^15.3.3",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "react-native-web": "^0.21.2",
+    "zustand": "^5.0.5"
   },
   "devDependencies": {
     "@types/node": "^22.15.21",

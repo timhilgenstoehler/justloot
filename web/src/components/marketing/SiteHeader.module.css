@@ -37,8 +37,25 @@
   color: #c9a227;
 }
 
+.playButton {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(201, 162, 39, 0.45);
+  background: rgba(201, 162, 39, 0.12);
+  color: #e8c547 !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.8px !important;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.playButton:hover {
+  background: rgba(201, 162, 39, 0.22);
+  border-color: rgba(201, 162, 39, 0.7);
+  color: #f5d76e !important;
+}
+
 @media (max-width: 560px) {
-  .nav a:not(:last-child) {
+  .nav a:not(.playButton):not(:last-child) {
     display: none;
   }
 }
