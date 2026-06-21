@@ -1,7 +1,5 @@
 import type { Metadata, Viewport } from 'next';
 import { Analytics } from '@vercel/analytics/next';
-import { Providers } from '@/components/Providers';
-import { AppShell } from '@/components/AppShell';
 import './globals.css';
 
 export const dynamic = 'force-dynamic';
@@ -12,11 +10,14 @@ const siteUrl =
 
 const title = 'Just Loot — No Quests. No Story. Just Loot.';
 const description =
-  'Find loot, optimize your build, push deeper depths, and chase legendary gear in a minimalist RPG focused entirely on the thrill of item hunting.';
+  'Find gear. Push deeper. Die. Find better gear. A minimalist loot RPG for iOS.';
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title,
+  title: {
+    default: title,
+    template: '%s | Just Loot',
+  },
   description,
   openGraph: {
     title,
@@ -24,7 +25,7 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: 'https://justloot.vercel.app/social.png',
+        url: '/social.png',
         width: 1200,
         height: 600,
         alt: 'Just Loot — No Quests. No Story. Just Loot.',
@@ -42,20 +43,14 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  themeColor: '#0B0B0F',
-  viewportFit: 'cover',
+  themeColor: '#000000',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body>
-        <Providers>
-          <AppShell>{children}</AppShell>
-        </Providers>
-        <Analytics />
-      </body>
+      <body>{children}</body>
+      <Analytics />
     </html>
   );
 }

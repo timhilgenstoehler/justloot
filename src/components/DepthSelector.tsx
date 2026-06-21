@@ -31,7 +31,7 @@ export function DepthSelector({
   disabled,
 }: DepthSelectorProps) {
   const { width: windowWidth } = useWindowDimensions();
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<typeof ScrollView | null>(null);
   const depths = Array.from({ length: maxUnlocked }, (_, i) => i + 1);
   const previewStats = scaleEnemyStat(selectedDepth);
 
@@ -45,7 +45,7 @@ export function DepthSelector({
     const chipOffset = (selectedDepth - 1) * (CHIP_SIZE + CHIP_GAP);
     const centered = chipOffset - scrollWidth / 2 + CHIP_SIZE / 2;
     const maxScroll = Math.max(0, rowWidth - scrollWidth);
-    scrollRef.current?.scrollTo({
+    (scrollRef.current as unknown as { scrollTo: (options: { x: number; animated: boolean }) => void })?.scrollTo({
       x: Math.min(maxScroll, Math.max(0, centered)),
       animated: true,
     });
@@ -61,7 +61,7 @@ export function DepthSelector({
       <Text style={styles.label}>Choose Depth</Text>
       <View style={[styles.row, { width: viewportWidth }]}>
         <Pressable
-          style={({ pressed }) => [
+          style={({ pressed }: { pressed: boolean }) => [
             styles.arrow,
             !canGoPrev && styles.arrowDisabled,
             pressed && canGoPrev && !disabled && styles.arrowPressed,
@@ -90,7 +90,7 @@ export function DepthSelector({
             return (
               <Pressable
                 key={d}
-                style={({ pressed }) => [
+                style={({ pressed }: { pressed: boolean }) => [
                   styles.chip,
                   isSelected && styles.chipSelected,
                   pressed && !disabled && styles.chipPressed,
@@ -107,7 +107,7 @@ export function DepthSelector({
         </ScrollView>
 
         <Pressable
-          style={({ pressed }) => [
+          style={({ pressed }: { pressed: boolean }) => [
             styles.arrow,
             !canGoNext && styles.arrowDisabled,
             pressed && canGoNext && !disabled && styles.arrowPressed,
@@ -120,12 +120,9 @@ export function DepthSelector({
           <Text style={[styles.arrowText, !canGoNext && styles.arrowTextDisabled]}>›</Text>
         </Pressable>
       </View>
-      <Text style={styles.preview} numberOfLines={2}>
+      <Text style={styles.unlocked} numberOfLines={2}>
         Enemy preview — HP {previewStats.health} · ATK {previewStats.attack}
       </Text>
-      {maxUnlocked > 1 && (
-        <Text style={styles.unlocked}>{maxUnlocked} depths unlocked</Text>
-      )}
     </View>
   );
 }
@@ -180,10 +177,10 @@ const styles = StyleSheet.create({
     flexGrow: 0,
     ...(Platform.OS === 'web'
       ? {
-          overflowX: 'scroll' as const,
-          touchAction: 'pan-x' as const,
-          WebkitOverflowScrolling: 'touch' as const,
-        }
+        overflowX: 'scroll' as const,
+        touchAction: 'pan-x' as const,
+        WebkitOverflowScrolling: 'touch' as const,
+      }
       : null),
   },
   scrollRow: {
@@ -228,7 +225,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   unlocked: {
-    marginTop: 4,
+    marginTop: 10,
     fontSize: 10,
     color: colors.textMuted,
     textAlign: 'center',

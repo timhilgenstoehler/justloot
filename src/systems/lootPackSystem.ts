@@ -30,6 +30,18 @@ export function generatePackItems(
   return items;
 }
 
+import { INVENTORY_CAPACITY } from '../types/game';
+import { LOOT_PACKS } from '../constants/lootPacks';
+
 export function getLootPack(packId: string): LootPackDef | undefined {
   return LOOT_PACK_BY_ID[packId];
+}
+
+/** True when the player can open at least one defined loot pack right now. */
+export function hasOpenableLootPack(dust: number, inventoryCount: number): boolean {
+  return LOOT_PACKS.some(
+    (pack) =>
+      dust >= pack.dustCost &&
+      inventoryCount + pack.cardCount <= INVENTORY_CAPACITY,
+  );
 }

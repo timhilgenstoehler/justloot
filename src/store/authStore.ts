@@ -1,13 +1,11 @@
 import type { Session, User } from '@supabase/supabase-js';
 import { create } from 'zustand';
-import { getSupabase, isSupabaseConfigured } from '../lib/supabase';
 import {
-  fetchFeed,
-  fetchLeaderboard,
-} from '../services/leaderboardService';
-import { loadCloudSave } from '../services/syncService';
-import { useGameStore } from './gameStore';
-import { useDebugStore } from './debugStore';
+  clearSupabaseAuthStorage,
+  getSupabase,
+  isSupabaseConfigured,
+  resetSupabaseClient,
+} from '../lib/supabase';
 
 interface AuthState {
   session: Session | null;
@@ -16,7 +14,8 @@ interface AuthState {
   loading: boolean;
   error: string | null;
   isDebugSession: boolean;
-  initialize: () => Promise<void>;
+  bootstrap: () => void;
+  restoreSession: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, displayName: string) => Promise<void>;
   signInAsGuest: () => Promise<void>;
@@ -25,45 +24,65 @@ interface AuthState {
   clearError: () => void;
 }
 
-let authSubscription: { unsubscribe: () => void } | null = null;
+let hydratedUserId: string | null = null;
 
 function generateGuestName(): string {
   return `Guest${Math.floor(1000 + Math.random() * 9000)}`;
 }
 
-async function loadCloudSaveWithRetry(userId: string): Promise<Awaited<ReturnType<typeof loadCloudSave>>> {
-  for (let attempt = 0; attempt < 4; attempt++) {
-    const save = await loadCloudSave(userId);
-    if (save) return save;
-    if (attempt < 3) {
-      await new Promise((resolve) => setTimeout(resolve, 350 * (attempt + 1)));
-    }
-  }
-  return null;
+function displayNameFromSession(session: Session): string | null {
+  const name = session.user.user_metadata?.display_name;
+  return typeof name === 'string' && name.trim() ? name.trim() : null;
 }
 
-async function hydrateUserSession(session: Session | null): Promise<void> {
+async function hydrateUserSession(session: Session): Promise<void> {
+  if (hydratedUserId === session.user.id) return;
+
+  const { loadCloudSave } = await import('../services/syncService');
+  const { fetchFeed, fetchLeaderboard } = await import('../services/leaderboardService');
+  const { useGameStore } = await import('./gameStore');
   const game = useGameStore.getState();
 
-  if (!session?.user) {
-    game.resetAll();
-    game.setLeaderboard([]);
-    game.setFeedLog([]);
-    return;
+  try {
+    const save = await loadCloudSave(session.user.id);
+    if (save) {
+      game.hydrateFromCloud(save);
+    } else {
+      const name = displayNameFromSession(session);
+      if (name) useGameStore.setState({ playerName: name });
+    }
+  } catch {
+    // cloud save is optional on first sign-in
   }
 
-  const save = await loadCloudSaveWithRetry(session.user.id);
-  if (save) {
-    game.hydrateFromCloud(save);
+  try {
+    game.setLeaderboard(await fetchLeaderboard(session.user.id));
+  } catch {
+    // leaderboard can load later
   }
 
-  const [leaderboard, feed] = await Promise.all([
-    fetchLeaderboard(session.user.id),
-    fetchFeed(),
-  ]);
+  try {
+    game.setFeedLog(await fetchFeed());
+  } catch {
+    // feed can load later
+  }
 
-  game.setLeaderboard(leaderboard);
-  game.setFeedLog(feed);
+  hydratedUserId = session.user.id;
+}
+
+function scheduleHydrate(session: Session | null): void {
+  if (!session?.user) return;
+  setTimeout(() => {
+    void hydrateUserSession(session);
+  }, 0);
+}
+
+async function clearLocalGameState(): Promise<void> {
+  const { useGameStore } = await import('./gameStore');
+  useGameStore.getState().resetAll();
+  useGameStore.getState().setLeaderboard([]);
+  useGameStore.getState().setFeedLog([]);
+  await useGameStore.persist.clearStorage();
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -74,63 +93,35 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   error: null,
   isDebugSession: false,
 
-  initialize: async () => {
-    if (!isSupabaseConfigured()) {
-      set({ initialized: true, error: 'Supabase is not configured.' });
-      return;
-    }
+  bootstrap: () => {
+    if (!get().initialized) set({ initialized: true });
+  },
 
-    if (get().initialized) return;
+  restoreSession: async () => {
+    if (!isSupabaseConfigured()) return;
 
-    const supabase = getSupabase();
-
-    const { data } = await supabase.auth.getSession();
-    set({
-      session: data.session,
-      user: data.session?.user ?? null,
-    });
-
-    if (data.session) {
-      try {
-        await hydrateUserSession(data.session);
-      } catch (err) {
-        set({ error: err instanceof Error ? err.message : 'Failed to load save.' });
-      }
-    }
-
-    if (!authSubscription) {
-      const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
-        set({ session, user: session?.user ?? null });
-
-        if (event === 'SIGNED_IN' && session) {
-          set({ loading: true, error: null, isDebugSession: false });
-          try {
-            await hydrateUserSession(session);
-          } catch (err) {
-            set({ error: err instanceof Error ? err.message : 'Failed to load save.' });
-          } finally {
-            set({ loading: false });
-          }
-        }
-
-        if (event === 'SIGNED_OUT') {
-          useGameStore.getState().resetAll();
-          useGameStore.getState().setLeaderboard([]);
-          useGameStore.getState().setFeedLog([]);
-        }
+    set({ loading: true, error: null });
+    try {
+      const { data, error } = await getSupabase().auth.getSession();
+      if (error) throw error;
+      set({ session: data.session, user: data.session?.user ?? null });
+      if (data.session) scheduleHydrate(data.session);
+    } catch (err) {
+      set({
+        error: err instanceof Error ? err.message : 'Failed to restore session.',
       });
-      authSubscription = listener.subscription;
+    } finally {
+      set({ loading: false });
     }
-
-    set({ initialized: true });
   },
 
   signIn: async (email, password) => {
     set({ loading: true, error: null, isDebugSession: false });
     try {
-      const supabase = getSupabase();
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await getSupabase().auth.signInWithPassword({ email, password });
       if (error) throw error;
+      set({ session: data.session, user: data.session?.user ?? null });
+      if (data.session) scheduleHydrate(data.session);
     } catch (err) {
       set({ error: err instanceof Error ? err.message : 'Sign in failed.' });
       throw err;
@@ -142,8 +133,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   signUp: async (email, password, displayName) => {
     set({ loading: true, error: null, isDebugSession: false });
     try {
-      const supabase = getSupabase();
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await getSupabase().auth.signUp({
         email,
         password,
         options: {
@@ -151,6 +141,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         },
       });
       if (error) throw error;
+      set({ session: data.session, user: data.session?.user ?? null });
+      if (data.session) scheduleHydrate(data.session);
     } catch (err) {
       set({ error: err instanceof Error ? err.message : 'Sign up failed.' });
       throw err;
@@ -162,13 +154,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   signInAsGuest: async () => {
     set({ loading: true, error: null, isDebugSession: false });
     try {
-      const supabase = getSupabase();
-      const { error } = await supabase.auth.signInAnonymously({
-        options: {
-          data: { display_name: generateGuestName() },
-        },
+      const { data: existing, error: existingError } = await getSupabase().auth.getSession();
+      if (existingError) throw existingError;
+      if (existing.session) {
+        set({ session: existing.session, user: existing.session.user });
+        scheduleHydrate(existing.session);
+        return;
+      }
+
+      const { data, error } = await getSupabase().auth.signInAnonymously({
+        options: { data: { display_name: generateGuestName() } },
       });
       if (error) throw error;
+      set({ session: data.session, user: data.session?.user ?? null });
+      if (data.session) scheduleHydrate(data.session);
     } catch (err) {
       set({
         error:
@@ -183,7 +182,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   enterDebugSession: () => {
+    const { useDebugStore } = require('./debugStore') as typeof import('./debugStore');
     useDebugStore.getState().enterDebug();
+    hydratedUserId = null;
     set({
       session: null,
       user: null,
@@ -195,14 +196,31 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   signOut: async () => {
-    if (get().isDebugSession) {
+    const { isDebugSession } = get();
+
+    if (isDebugSession) {
+      const { useDebugStore } = require('./debugStore') as typeof import('./debugStore');
       useDebugStore.getState().exitDebug();
-      set({ session: null, user: null, isDebugSession: false, error: null });
+      hydratedUserId = null;
+      await clearLocalGameState();
+      set({ session: null, user: null, isDebugSession: false, loading: false, error: null });
       return;
     }
-    const supabase = getSupabase();
-    await supabase.auth.signOut();
-    set({ session: null, user: null, error: null });
+
+    hydratedUserId = null;
+    set({ session: null, user: null, loading: false, error: null, isDebugSession: false });
+
+    try {
+      await clearLocalGameState();
+      await clearSupabaseAuthStorage();
+      try {
+        await getSupabase().auth.signOut({ scope: 'local' });
+      } catch {
+        // local sign-out is enough if remote hangs
+      }
+    } finally {
+      resetSupabaseClient();
+    }
   },
 
   clearError: () => set({ error: null }),

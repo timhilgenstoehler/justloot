@@ -4,6 +4,10 @@
   box-sizing: border-box;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 html,
 body {
   margin: 0;
@@ -12,74 +16,14 @@ body {
   background: #000;
   color: #f4f4f5;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  -webkit-user-select: none;
-  user-select: none;
-  -webkit-touch-callout: none;
-}
-
-body {
   -webkit-font-smoothing: antialiased;
 }
 
-.stats-shell {
-  width: 100%;
-  min-height: 100dvh;
-  background: #0b0b0f;
+a {
+  color: inherit;
 }
 
-.phone-shell {
-  width: 100%;
-  max-width: 430px;
-  min-height: 100dvh;
-  margin: 0 auto;
-  background: #0b0b0f;
-  position: relative;
-  overflow-x: clip;
-  box-shadow: 0 0 60px rgba(0, 0, 0, 0.45);
-  display: flex;
-  flex-direction: column;
-}
-
-/* RN Web horizontal scroll — keep touch pan working inside phone shell */
-.phone-shell [data-horizontal-scroll='true'] {
-  -webkit-overflow-scrolling: touch;
-  touch-action: pan-x;
-  overscroll-behavior-x: contain;
-}
-
-@media (min-width: 480px) {
-  body {
-    padding: 16px 0;
-  }
-
-  .phone-shell {
-    min-height: calc(100dvh - 32px);
-    border-radius: 24px;
-    border: 1px solid #1f1f28;
-  }
-}
-
-/* react-native-web modals portal to body — keep above app chrome */
-body [role='dialog'] {
-  z-index: 9999 !important;
-}
-
-/* Ensure modal layer fits visible viewport on mobile Safari */
-body [role='dialog'] > div {
-  height: 100svh;
-  max-height: 100svh;
-  min-height: 100svh;
-  overflow: hidden;
-}
-input,
-textarea,
-button {
-  font-family: inherit;
-}
-
-input,
-textarea,
-[contenteditable='true'] {
-  -webkit-user-select: text;
-  user-select: text;
+img {
+  max-width: 100%;
+  height: auto;
 }

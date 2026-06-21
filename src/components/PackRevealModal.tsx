@@ -66,9 +66,11 @@ export function PackRevealModal() {
           <Text style={styles.packName}>{packName}</Text>
 
           {!items ? (
-            <View style={styles.opening}>
-              <Text style={styles.openingMark}>?</Text>
-              <Text style={styles.openingHint}>OPENING PACK</Text>
+            <View style={styles.card}>
+              <View style={styles.opening}>
+                <Text style={styles.openingMark}>?</Text>
+                <Text style={styles.openingHint}>OPENING PACK</Text>
+              </View>
             </View>
           ) : !done && current ? (
             <>
@@ -76,12 +78,14 @@ export function PackRevealModal() {
                 Card {cardIndex + 1} of {items.length}
               </Text>
               <View style={styles.revealWrap}>
-                <ItemReveal
-                  key={current.id}
-                  item={current}
-                  collectionStats={collectionStats}
-                  onRevealComplete={handleRevealComplete}
-                />
+                <View style={styles.card}>
+                  <ItemReveal
+                    key={current.id}
+                    item={current}
+                    collectionStats={collectionStats}
+                    onRevealComplete={handleRevealComplete}
+                  />
+                </View>
               </View>
             </>
           ) : (
@@ -124,6 +128,27 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 16,
   },
+  progress: {
+    fontSize: 10,
+    color: colors.textMuted,
+    textAlign: 'center',
+    letterSpacing: 2,
+    marginBottom: 12,
+  },
+  revealWrap: {
+    flexShrink: 1,
+    width: '100%',
+    alignItems: 'center',
+  },
+  card: {
+    backgroundColor: '#0D0D12',
+    borderRadius: 4,
+    width: '100%',
+    maxWidth: 340,
+    borderWidth: 1,
+    borderColor: '#3A3A45',
+    overflow: 'hidden',
+  },
   opening: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -140,16 +165,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: colors.textMuted,
     letterSpacing: 3,
-  },
-  progress: {
-    fontSize: 10,
-    color: colors.textMuted,
-    textAlign: 'center',
-    letterSpacing: 2,
-    marginBottom: 12,
-  },
-  revealWrap: {
-    flexShrink: 1,
   },
   doneBlock: {
     alignItems: 'center',

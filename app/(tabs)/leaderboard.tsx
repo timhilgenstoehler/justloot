@@ -2,10 +2,11 @@ import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors } from '../src/constants/theme';
-import { sortLeaderboard } from '../src/systems/leaderboardSystem';
-import { useGameStore } from '../src/store/gameStore';
-import type { LeaderboardSort } from '../src/types/game';
+import { TabScreen, tabPanelStyle } from '../../src/components/TabScreen';
+import { colors } from '../../src/constants/theme';
+import { sortLeaderboard } from '../../src/systems/leaderboardSystem';
+import { useGameStore } from '../../src/store/gameStore';
+import type { LeaderboardSort } from '../../src/types/game';
 
 const SORT_OPTIONS: { id: LeaderboardSort; label: string }[] = [
   { id: 'rating', label: 'Rating' },
@@ -33,29 +34,25 @@ export default function LeaderboardScreen() {
   }, [ensureLeaderboardReady]);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Pressable onPress={() => router.back()} style={styles.back}>
-        <Text style={styles.backText}>← Back</Text>
-      </Pressable>
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <TabScreen style={styles.tabScreen}>
+        <Text style={styles.sortLabel}>Sort</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.sortRow}>
+          {SORT_OPTIONS.map((opt) => (
+            <Pressable
+              key={opt.id}
+              style={[styles.chip, sortBy === opt.id && styles.chipActive]}
+              onPress={() => setSortBy(opt.id)}
+            >
+              <Text style={[styles.chipText, sortBy === opt.id && styles.chipTextActive]}>
+                {opt.label}
+              </Text>
+            </Pressable>
+          ))}
+        </ScrollView>
 
-      <Text style={styles.title}>Leaderboard</Text>
-
-      <Text style={styles.sortLabel}>Sort</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.sortRow}>
-        {SORT_OPTIONS.map((opt) => (
-          <Pressable
-            key={opt.id}
-            style={[styles.chip, sortBy === opt.id && styles.chipActive]}
-            onPress={() => setSortBy(opt.id)}
-          >
-            <Text style={[styles.chipText, sortBy === opt.id && styles.chipTextActive]}>
-              {opt.label}
-            </Text>
-          </Pressable>
-        ))}
-      </ScrollView>
-
-      <ScrollView showsVerticalScrollIndicator={false}>
+        <View style={tabPanelStyle.panel}>
+          <ScrollView style={tabPanelStyle.scroll} showsVerticalScrollIndicator={false}>
         {sortedLeaderboard.map((entry, index) => (
           <View
             key={entry.id}
@@ -99,28 +96,24 @@ export default function LeaderboardScreen() {
             ))}
           </View>
         )}
-      </ScrollView>
+          </ScrollView>
+        </View>
+      </TabScreen>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background, padding: 24 },
-  back: { marginBottom: 16 },
-  backText: { color: colors.textMuted, fontSize: 14 },
-  title: {
-    fontSize: 14,
-    color: colors.textMuted,
-    letterSpacing: 3,
-    textTransform: 'uppercase',
-    textAlign: 'center',
-    marginBottom: 16,
+  tabScreen: {
+    flex: 1,
   },
   sortLabel: {
     fontSize: 10,
     color: colors.textMuted,
     letterSpacing: 2,
     textTransform: 'uppercase',
+    marginTop: 8,
     marginBottom: 6,
   },
   sortRow: { marginBottom: 16, maxHeight: 36, flexGrow: 0 },

@@ -13,7 +13,7 @@ function Loading() {
 }
 
 export default function GearPage() {
-  const Screen = require('../../../../app/gear').default;
+  const Screen = require('../../../../app/(tabs)/gear').default;
   return (
     <Suspense fallback={<Loading />}>
       <Screen />

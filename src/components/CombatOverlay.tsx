@@ -152,77 +152,77 @@ export function CombatOverlay() {
           <LootRevealFlow />
         ) : combatResult ? (
           <>
-      <Text style={styles.location}>{combatResult.locationName}</Text>
-      <Text style={styles.depth}>Depth {combatResult.depth}</Text>
+            <Text style={styles.location}>{combatResult.locationName}</Text>
+            <Text style={styles.depth}>Depth {combatResult.depth}</Text>
 
-      <View style={styles.terminal}>
-        {hp && (
-          <View style={styles.healthRow}>
-            <View style={styles.healthCol}>
-              <CombatHealthBar
-                label="YOU"
-                current={hp.playerHp}
-                max={hp.playerMaxHp}
-                compact
+            <View style={styles.terminal}>
+              {hp && (
+                <View style={styles.healthRow}>
+                  <View style={styles.healthCol}>
+                    <CombatHealthBar
+                      label="YOU"
+                      current={hp.playerHp}
+                      max={hp.playerMaxHp}
+                      compact
+                    />
+                  </View>
+                  <View style={[styles.healthCol, styles.healthColEnemy]}>
+                    <CombatHealthBar
+                      label={enemyLabel}
+                      current={hp.enemyHp}
+                      max={hp.enemyMaxHp}
+                      compact
+                      align="right"
+                    />
+                  </View>
+                </View>
+              )}
+              <FlatList
+                ref={listRef}
+                data={displayLines}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => <LogLine line={item} />}
+                style={styles.logList}
+                contentContainerStyle={styles.logContent}
+                showsVerticalScrollIndicator={false}
               />
+              {!isComplete && <Text style={styles.cursor}>_</Text>}
             </View>
-            <View style={[styles.healthCol, styles.healthColEnemy]}>
-              <CombatHealthBar
-                label={enemyLabel}
-                current={hp.enemyHp}
-                max={hp.enemyMaxHp}
-                compact
-                align="right"
-              />
-            </View>
-          </View>
-        )}
-        <FlatList
-          ref={listRef}
-          data={displayLines}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <LogLine line={item} />}
-          style={styles.logList}
-          contentContainerStyle={styles.logContent}
-          showsVerticalScrollIndicator={false}
-        />
-        {!isComplete && <Text style={styles.cursor}>_</Text>}
-      </View>
 
-      {showVictorySummary && (
-        <View style={styles.victoryFooter}>
-          <Text style={styles.victoryTitle}>VICTORY</Text>
-          <Text style={styles.survivalLine}>
-            You survived with {combatResult.playerFinalHp} HP.
-          </Text>
-          {runMode === 'dungeon' && <Text style={styles.lootHint}>Loot Found.</Text>}
-          {runMode === 'arena' && <CombatSummary result={combatResult} variant="victory" />}
-        </View>
-      )}
+            {showVictorySummary && (
+              <View style={styles.victoryFooter}>
+                <Text style={styles.victoryTitle}>VICTORY</Text>
+                <Text style={styles.survivalLine}>
+                  You survived with {combatResult.playerFinalHp} HP.
+                </Text>
+                {runMode === 'dungeon' && <Text style={styles.lootHint}>Loot Found.</Text>}
+                {runMode === 'arena' && <CombatSummary result={combatResult} variant="victory" />}
+              </View>
+            )}
 
-      {showVictoryButton && runMode === 'dungeon' && (
-        <Pressable
-          style={({ pressed }) => [styles.actionButton, pressed && styles.actionPressed]}
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            claimVictoryLoot();
-          }}
-        >
-          <Text style={styles.actionText}>REVEAL</Text>
-        </Pressable>
-      )}
+            {showVictoryButton && runMode === 'dungeon' && (
+              <Pressable
+                style={({ pressed }: { pressed: boolean }) => [styles.actionButton, pressed && styles.actionPressed]}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  claimVictoryLoot();
+                }}
+              >
+                <Text style={styles.actionText}>REVEAL</Text>
+              </Pressable>
+            )}
 
-      {showVictoryButton && runMode === 'arena' && (
-        <Pressable
-          style={({ pressed }) => [styles.actionButton, pressed && styles.actionPressed]}
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            dismissArenaVictory();
-          }}
-        >
-          <Text style={styles.actionText}>Continue</Text>
-        </Pressable>
-      )}
+            {showVictoryButton && runMode === 'arena' && (
+              <Pressable
+                style={({ pressed }: { pressed: boolean }) => [styles.actionButton, pressed && styles.actionPressed]}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  dismissArenaVictory();
+                }}
+              >
+                <Text style={styles.actionText}>Continue</Text>
+              </Pressable>
+            )}
           </>
         ) : null}
       </SafeAreaView>
@@ -268,6 +268,8 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: '#0A0A0E',
     padding: 12,
+    marginTop: 20,
+    marginBottom: 20,
   },
   logList: {
     flex: 1,
@@ -349,6 +351,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 4,
     alignItems: 'center',
+    marginBottom: 40,
   },
   actionPressed: { opacity: 0.85 },
   actionText: {

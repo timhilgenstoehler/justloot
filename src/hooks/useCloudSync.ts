@@ -44,6 +44,7 @@ export function useCloudSync(): void {
       if (timerRef.current) clearTimeout(timerRef.current);
       timerRef.current = setTimeout(async () => {
         if (syncingRef.current) return;
+        if (useAuthStore.getState().user?.id !== userId) return;
         syncingRef.current = true;
         try {
           await saveCloudSave(userId, extractPersisted(state));

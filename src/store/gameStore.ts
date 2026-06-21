@@ -110,7 +110,7 @@ const EMPTY_COUNTERS: CollectionCounters = {
 };
 
 const initialState: GameState = {
-  playerName: 'Tim',
+  playerName: 'Adventurer',
   dust: 0,
   totalRuns: 0,
   depth: 1,

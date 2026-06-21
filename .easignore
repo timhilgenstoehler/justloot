@@ -1,0 +1,11 @@
+# Next.js app — not used by EAS native builds (Metro only bundles /app + /src).
+web/node_modules/
+
+# Web-only artifacts
+web/.next/
+web/out/
+
+# Local / CI noise
+.git/
+*.md
+web/README.md

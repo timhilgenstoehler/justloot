@@ -1,4 +1,5 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { tabPanelStyle } from './TabScreen';
 import { rarityColors, rarityLabels } from '../constants/theme';
 import { colors } from '../constants/theme';
 import { getSlotLabel } from '../constants/slots';
@@ -11,7 +12,8 @@ export function CollectionTab() {
   const totalFound = entries.length;
 
   return (
-    <ScrollView showsVerticalScrollIndicator={false}>
+    <View style={tabPanelStyle.panel}>
+      <ScrollView style={tabPanelStyle.scroll} showsVerticalScrollIndicator={false}>
       <View style={styles.summary}>
         <Text style={styles.summaryTitle}>Items Found</Text>
         <Text style={styles.summaryCount}>{totalFound}</Text>
@@ -45,7 +47,8 @@ export function CollectionTab() {
           </View>
         ))
       )}
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 

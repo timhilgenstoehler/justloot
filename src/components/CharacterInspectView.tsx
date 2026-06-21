@@ -8,6 +8,7 @@ import { LEFT_SLOTS, RIGHT_SLOTS } from '../constants/slots';
 import { SCREEN_PADDING } from '../constants/layout';
 import { colors } from '../constants/theme';
 import { calculateCharacterLoadout } from '../systems/characterStatsCalculator';
+import { generateBuildArchetype } from '../systems/buildArchetype';
 import type { Item, Slot } from '../types/game';
 import type { PlayerInspectData } from '../services/inspectService';
 
@@ -28,6 +29,12 @@ export function CharacterInspectView({
 
   const loadout = calculateCharacterLoadout(data.equipment);
   const combatStats = loadout.stats;
+  const buildTitle = generateBuildArchetype(
+    loadout.stats,
+    loadout.effects,
+    loadout.resists,
+    loadout.build,
+  );
 
   return (
     <View style={styles.container}>
@@ -40,6 +47,7 @@ export function CharacterInspectView({
         powerScore={data.powerScore}
         combatStats={combatStats}
         arenaRating={data.arenaRating}
+        title={buildTitle}
       />
 
       <View style={styles.characterArea}>

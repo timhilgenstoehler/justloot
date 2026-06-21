@@ -11,6 +11,7 @@ interface PowerHeaderProps {
   combatStats: CombatStats;
   arenaRating?: number;
   dust?: number;
+  title?: string;
 }
 
 export function PowerHeader({
@@ -21,10 +22,12 @@ export function PowerHeader({
   combatStats,
   arenaRating,
   dust,
+  title,
 }: PowerHeaderProps) {
   return (
     <View style={styles.container}>
       <Text style={styles.playerName}>{playerName}</Text>
+      {title ? <Text style={styles.title}>{title}</Text> : null}
       <Text style={styles.depth}>Depth {selectedDepth}</Text>
       {maxUnlockedDepth > selectedDepth && (
         <Text style={styles.unlocked}>Unlocked to {maxUnlockedDepth}</Text>
@@ -73,6 +76,15 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     letterSpacing: 1,
     marginBottom: 4,
+  },
+  title: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: colors.cta,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    textAlign: 'center',
+    marginBottom: 8,
   },
   depth: {
     fontSize: 12,

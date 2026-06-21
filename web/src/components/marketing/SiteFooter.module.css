@@ -1,0 +1,47 @@
+.footer {
+  padding: 64px clamp(20px, 5vw, 48px) 40px;
+  border-top: 1px solid #1e1e28;
+  text-align: center;
+}
+
+.brand {
+  margin-bottom: 28px;
+}
+
+.name {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 4px;
+  color: #f4f4f5;
+}
+
+.tagline {
+  margin: 0;
+  font-size: 14px;
+  color: #6b6b7b;
+}
+
+.links {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.links a {
+  font-size: 13px;
+  color: #6b6b7b;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.links a:hover {
+  color: #c9a227;
+}
+
+.copy {
+  margin: 0;
+  font-size: 11px;
+  color: #3d3d4d;
+}

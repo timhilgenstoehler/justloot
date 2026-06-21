@@ -8,6 +8,7 @@ import {
   getLifeSteal,
   getThornsDamage,
 } from '../systems/characterStatsCalculator';
+import { isStrongStatValue } from '../utils/statHighlight';
 import type {
   BuildCombatState,
   CombatEffect,
@@ -26,7 +27,8 @@ interface CharacterStatsPanelProps {
 interface StatRow {
   label: string;
   value: string;
-  accent?: boolean;
+  numeric: number;
+  strong?: boolean;
 }
 
 function sumEffect(effects: CombatEffect[], type: CombatEffectType): number {
@@ -40,15 +42,15 @@ function buildRows(
   build: BuildCombatState,
 ): StatRow[] {
   const rows: StatRow[] = [
-    { label: 'Crit', value: `${stats.critChance}%` },
-    { label: 'Crit Dmg', value: `${stats.critDamage}%` },
+    { label: 'Crit', value: `${stats.critChance}%`, numeric: stats.critChance },
+    { label: 'Crit Dmg', value: `${stats.critDamage}%`, numeric: stats.critDamage },
   ];
 
   if (stats.attackSpeed > 0) {
-    rows.push({ label: 'Atk Speed', value: `${stats.attackSpeed}%` });
+    rows.push({ label: 'Atk Speed', value: `${stats.attackSpeed}%`, numeric: stats.attackSpeed });
   }
   if (stats.healthRegen > 0) {
-    rows.push({ label: 'Regen', value: `${stats.healthRegen}` });
+    rows.push({ label: 'Regen', value: `${stats.healthRegen}`, numeric: stats.healthRegen });
   }
 
   const dodge = getDodgeChance(effects);
@@ -57,11 +59,11 @@ function buildRows(
   const thorns = getThornsDamage(effects);
   const execute = getExecuteChance(effects);
 
-  if (dodge > 0) rows.push({ label: 'Dodge', value: `${dodge}%`, accent: true });
-  if (block > 0) rows.push({ label: 'Block', value: `${block}%`, accent: true });
-  if (lifeSteal > 0) rows.push({ label: 'Life Steal', value: `${lifeSteal}%` });
-  if (thorns.total > 0) rows.push({ label: 'Thorns', value: `${thorns.total}` });
-  if (execute > 0) rows.push({ label: 'Execute', value: `${execute}%` });
+  if (dodge > 0) rows.push({ label: 'Dodge', value: `${dodge}%`, numeric: dodge });
+  if (block > 0) rows.push({ label: 'Block', value: `${block}%`, numeric: block });
+  if (lifeSteal > 0) rows.push({ label: 'Life Steal', value: `${lifeSteal}%`, numeric: lifeSteal });
+  if (thorns.total > 0) rows.push({ label: 'Thorns', value: `${thorns.total}`, numeric: thorns.total });
+  if (execute > 0) rows.push({ label: 'Execute', value: `${execute}%`, numeric: execute });
 
   const fireDmg = sumEffect(effects, 'fireDamage');
   const frostDmg = sumEffect(effects, 'frostDamage');
@@ -69,43 +71,46 @@ function buildRows(
   const poisonDmg = sumEffect(effects, 'poisonDamage');
   const bleedDmg = sumEffect(effects, 'bleedDamage');
 
-  if (fireDmg > 0) rows.push({ label: 'Fire Dmg', value: `+${fireDmg}%` });
-  if (frostDmg > 0) rows.push({ label: 'Frost Dmg', value: `+${frostDmg}%` });
-  if (lightningDmg > 0) rows.push({ label: 'Lightning', value: `+${lightningDmg}%` });
-  if (poisonDmg > 0) rows.push({ label: 'Poison Dmg', value: `+${poisonDmg}%` });
-  if (bleedDmg > 0) rows.push({ label: 'Bleed Dmg', value: `+${bleedDmg}%` });
+  if (fireDmg > 0) rows.push({ label: 'Fire Dmg', value: `+${fireDmg}%`, numeric: fireDmg });
+  if (frostDmg > 0) rows.push({ label: 'Frost Dmg', value: `+${frostDmg}%`, numeric: frostDmg });
+  if (lightningDmg > 0) rows.push({ label: 'Lightning', value: `+${lightningDmg}%`, numeric: lightningDmg });
+  if (poisonDmg > 0) rows.push({ label: 'Poison Dmg', value: `+${poisonDmg}%`, numeric: poisonDmg });
+  if (bleedDmg > 0) rows.push({ label: 'Bleed Dmg', value: `+${bleedDmg}%`, numeric: bleedDmg });
 
-  if (resists.fire > 0) rows.push({ label: 'Fire Res', value: `${resists.fire}%`, accent: true });
-  if (resists.cold > 0) rows.push({ label: 'Frost Res', value: `${resists.cold}%`, accent: true });
-  if (resists.lightning > 0) rows.push({ label: 'Lightning Res', value: `${resists.lightning}%`, accent: true });
-  if (resists.poison > 0) rows.push({ label: 'Poison Res', value: `${resists.poison}%`, accent: true });
-  if (resists.bleed > 0) rows.push({ label: 'Bleed Res', value: `${resists.bleed}%`, accent: true });
+  if (resists.fire > 0) rows.push({ label: 'Fire Res', value: `${resists.fire}%`, numeric: resists.fire });
+  if (resists.cold > 0) rows.push({ label: 'Frost Res', value: `${resists.cold}%`, numeric: resists.cold });
+  if (resists.lightning > 0) rows.push({ label: 'Lightning Res', value: `${resists.lightning}%`, numeric: resists.lightning });
+  if (resists.poison > 0) rows.push({ label: 'Poison Res', value: `${resists.poison}%`, numeric: resists.poison });
+  if (resists.bleed > 0) rows.push({ label: 'Bleed Res', value: `${resists.bleed}%`, numeric: resists.bleed });
 
   for (const affix of build.buildAffixes) {
     rows.push({
       label: 'Build',
       value: BUILD_AFFIX_LABELS[affix] ?? affix,
-      accent: true,
+      numeric: 100,
     });
   }
   for (const fx of build.specialEffects) {
     rows.push({
       label: 'Special',
       value: SPECIAL_EFFECT_LABELS[fx] ?? fx,
-      accent: true,
+      numeric: 100,
     });
   }
 
-  return rows;
+  return rows.map((row) => ({
+    ...row,
+    strong: row.strong ?? isStrongStatValue(row.label, row.numeric),
+  }));
 }
 
-function StatLine({ label, value, accent }: StatRow) {
+function StatLine({ label, value, strong }: StatRow) {
   return (
     <View style={styles.row}>
       <Text style={styles.label} numberOfLines={1}>
         {label}
       </Text>
-      <Text style={[styles.value, accent && styles.valueAccent]} numberOfLines={2}>
+      <Text style={[styles.value, strong && styles.valueStrong]} numberOfLines={2}>
         {value}
       </Text>
     </View>
@@ -212,7 +217,7 @@ const styles = StyleSheet.create({
     lineHeight: 14,
     textAlign: 'center',
   },
-  valueAccent: {
+  valueStrong: {
     color: colors.cta,
   },
 });

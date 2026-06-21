@@ -117,6 +117,7 @@ const styles = StyleSheet.create({
   container: {
     width: '100%',
     paddingVertical: 8,
+    paddingHorizontal: 16,
   },
   containerCompact: {
     paddingVertical: 4,
@@ -130,6 +131,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     textAlign: 'center',
     marginBottom: 20,
+    marginTop: 16
   },
   columns: {
     flexDirection: 'row',

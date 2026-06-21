@@ -13,7 +13,7 @@ function Loading() {
 }
 
 export default function CraftPage() {
-  const Screen = require('../../../../app/craft').default;
+  const Screen = require('../../../../app/(tabs)/craft').default;
   return (
     <Suspense fallback={<Loading />}>
       <Screen />

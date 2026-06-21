@@ -1,5 +1,6 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { EquipmentColumn } from './EquipmentColumn';
+import { tabPanelStyle } from './TabScreen';
 import { LEFT_SLOTS, RIGHT_SLOTS } from '../constants/slots';
 import { colors, rarityColors } from '../constants/theme';
 import type { Item, Slot } from '../types/game';
@@ -18,55 +19,57 @@ export function EquippedTab({ onItemPress }: EquippedTabProps) {
   };
 
   return (
-    <ScrollView showsVerticalScrollIndicator={false}>
-      <Text style={styles.hint}>Tap a slot to view, unequip, or salvage.</Text>
-      <View style={styles.grid}>
-        <EquipmentColumn
-          slots={LEFT_SLOTS}
-          equipment={equipment}
-          align="left"
-          onItemPress={(item) => {
-            const slot = LEFT_SLOTS.find((s) => equipment[s.id]?.id === item.id)?.id;
-            if (slot) handleSlotPress(slot);
-          }}
-        />
-        <View style={styles.spacer} />
-        <EquipmentColumn
-          slots={RIGHT_SLOTS}
-          equipment={equipment}
-          align="right"
-          onItemPress={(item) => {
-            const slot = RIGHT_SLOTS.find((s) => equipment[s.id]?.id === item.id)?.id;
-            if (slot) handleSlotPress(slot);
-          }}
-        />
-      </View>
+    <View style={tabPanelStyle.panel}>
+      <ScrollView style={tabPanelStyle.scroll} showsVerticalScrollIndicator={false}>
+        <Text style={styles.hint}>Tap a slot to view, unequip, or salvage.</Text>
+        <View style={styles.grid}>
+          <EquipmentColumn
+            slots={LEFT_SLOTS}
+            equipment={equipment}
+            align="left"
+            onItemPress={(item) => {
+              const slot = LEFT_SLOTS.find((s) => equipment[s.id]?.id === item.id)?.id;
+              if (slot) handleSlotPress(slot);
+            }}
+          />
+          <View style={styles.spacer} />
+          <EquipmentColumn
+            slots={RIGHT_SLOTS}
+            equipment={equipment}
+            align="right"
+            onItemPress={(item) => {
+              const slot = RIGHT_SLOTS.find((s) => equipment[s.id]?.id === item.id)?.id;
+              if (slot) handleSlotPress(slot);
+            }}
+          />
+        </View>
 
-      <View style={styles.list}>
-        {LEFT_SLOTS.concat(RIGHT_SLOTS).map((slotConfig) => {
-          const item = equipment[slotConfig.id];
-          return (
-            <Pressable
-              key={slotConfig.id}
-              style={({ pressed }) => [styles.slotRow, pressed && item && styles.pressed]}
-              onPress={() => item && handleSlotPress(slotConfig.id)}
-              disabled={!item}
-            >
-              <Text style={styles.slotLabel}>{slotConfig.label}</Text>
-              <Text
-                style={[
-                  styles.slotValue,
-                  !item && styles.empty,
-                  item && { color: rarityColors[item.rarity] },
-                ]}
+        <View style={styles.list}>
+          {LEFT_SLOTS.concat(RIGHT_SLOTS).map((slotConfig) => {
+            const item = equipment[slotConfig.id];
+            return (
+              <Pressable
+                key={slotConfig.id}
+                style={({ pressed }: { pressed: boolean }) => [styles.slotRow, pressed && item && styles.pressed]}
+                onPress={() => item && handleSlotPress(slotConfig.id)}
+                disabled={!item}
               >
-                {item ? item.name : '—'}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
-    </ScrollView>
+                <Text style={styles.slotLabel}>{slotConfig.label}</Text>
+                <Text
+                  style={[
+                    styles.slotValue,
+                    !item && styles.empty,
+                    item && { color: rarityColors[item.rarity] },
+                  ]}
+                >
+                  {item ? item.name : '—'}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 

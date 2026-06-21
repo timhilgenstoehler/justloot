@@ -1,0 +1,257 @@
+.page {
+  min-height: 100dvh;
+  background: #000;
+  color: #f4f4f5;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: clamp(32px, 6vw, 80px);
+  min-height: min(92dvh, 900px);
+  padding: clamp(48px, 8vw, 120px) clamp(20px, 5vw, 48px);
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.heroCopy {
+  max-width: 480px;
+}
+
+.eyebrow {
+  margin: 0 0 16px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 4px;
+  color: #c9a227;
+}
+
+.heroTitle {
+  margin: 0 0 20px;
+  font-size: clamp(2.25rem, 5vw, 3.5rem);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.heroSub {
+  margin: 0 0 32px;
+  font-size: clamp(1rem, 2vw, 1.2rem);
+  line-height: 1.6;
+  color: #a1a1aa;
+}
+
+.ctaRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.ctaPrimary,
+.ctaSecondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 28px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: opacity 0.15s, transform 0.15s;
+}
+
+.ctaPrimary {
+  background: #c9a227;
+  color: #0b0b0f;
+  border: none;
+}
+
+.ctaPrimary:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.ctaSecondary {
+  background: transparent;
+  color: #f4f4f5;
+  border: 1px solid #1e1e28;
+}
+
+.ctaSecondary:hover {
+  border-color: #c9a227;
+  color: #c9a227;
+}
+
+.section {
+  padding: clamp(64px, 10vw, 120px) clamp(20px, 5vw, 48px);
+}
+
+.sectionInner {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: clamp(40px, 6vw, 80px);
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.sectionInnerNarrow {
+  max-width: 640px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.sectionTitle {
+  margin: 0 0 24px;
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+.loopList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.loopList li {
+  font-size: 1.1rem;
+  color: #e8e6e3;
+  padding-left: 28px;
+  position: relative;
+}
+
+.loopList li::before {
+  content: counter(list-item);
+  counter-increment: list-item;
+  position: absolute;
+  left: 0;
+  color: #c9a227;
+  font-weight: 800;
+  font-size: 0.9rem;
+}
+
+.loopList {
+  counter-reset: list-item;
+}
+
+.body {
+  margin: 0 0 16px;
+  font-size: 1.1rem;
+  line-height: 1.7;
+  color: #a1a1aa;
+}
+
+.highlight {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #c9a227;
+}
+
+.divider {
+  text-align: center;
+  color: #1e1e28;
+  font-size: 14px;
+  letter-spacing: 4px;
+  padding: 0 20px;
+}
+
+.quote {
+  margin: 32px 0 0;
+  padding: 0;
+  border: none;
+  font-size: clamp(1.25rem, 3vw, 1.75rem);
+  font-style: italic;
+  font-weight: 600;
+  color: #c9a227;
+}
+
+.comingSoon {
+  margin: 0 0 12px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #6b6b7b;
+}
+
+.featureList {
+  list-style: none;
+  margin: 0 0 24px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.featureList li {
+  font-size: 1.1rem;
+  color: #e8e6e3;
+}
+
+.featureList li::before {
+  content: '· ';
+  color: #c9a227;
+}
+
+.siriLine {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 600;
+  font-style: italic;
+  color: #f4f4f5;
+}
+
+.finalCta {
+  text-align: center;
+  padding: clamp(80px, 12vw, 140px) clamp(20px, 5vw, 48px);
+  background: radial-gradient(ellipse at center, rgba(201, 162, 39, 0.08) 0%, transparent 60%);
+}
+
+.finalLine {
+  margin: 0 0 28px;
+  font-size: clamp(1.35rem, 3vw, 2rem);
+  font-weight: 700;
+  line-height: 1.35;
+  max-width: 520px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (max-width: 768px) {
+  .hero {
+    grid-template-columns: 1fr;
+    text-align: center;
+    min-height: auto;
+    padding-top: 32px;
+    padding-bottom: 64px;
+  }
+
+  .heroCopy {
+    max-width: none;
+    order: 1;
+  }
+
+  .ctaRow {
+    justify-content: center;
+  }
+
+  .sectionInner {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+
+  .loopList li {
+    text-align: left;
+    max-width: 240px;
+    margin: 0 auto;
+  }
+}

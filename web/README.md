@@ -1,6 +1,8 @@
-# Just Loot — Web (Next.js)
+# Just Loot — Marketing Site (Next.js)
 
-Browser-playable build of **Just Loot** for quick sharing with friends. Reuses the same game logic and screens from the Expo app via `react-native-web`.
+Landing page for **Just Loot**. Black background, gold accents, App Store / Google Play coming-soon CTAs.
+
+Contact: `timhilgenstoehler+justloot@gmail.com`
 
 ## Local dev
 
@@ -12,35 +14,36 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-## Deploy to Vercel (fastest)
+## Pages
 
-1. Push this repo to GitHub
-2. [vercel.com/new](https://vercel.com/new) → import the repo
-3. Set **Root Directory** to `web` (required)
-4. Add environment variables (Production + Preview):
-   - `NEXT_PUBLIC_SUPABASE_URL`
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-5. Deploy
+| Route | Purpose |
+|-------|---------|
+| `/` | Marketing homepage |
+| `/support` | Support & contact (App Store requirement) |
+| `/privacy` | Privacy policy (App Store requirement) |
 
-Or with the CLI:
+## Environment variables
+
+Optional — set in Vercel (or `.env.local`):
+
+```
+NEXT_PUBLIC_SITE_URL=https://your-domain.com
+```
+
+Store buttons show **Coming soon** until you add live App Store / Play Store links later.
+
+## Deploy to Vercel
+
+1. Import repo → set **Root Directory** to `web`
+2. Add env vars above
+3. Deploy
 
 ```bash
 cd web
 npx vercel
 ```
 
-## Deploy elsewhere
-
-```bash
-cd web
-npm install
-npm run build
-npm run start
-```
-
 ## Notes
 
-- Saves use **localStorage** (per browser/device)
-- Mobile-style layout is centered in a phone frame on desktop
-- Expo-only APIs (haptics, native navigation) are shimmed for web
-- Same routes as the app: `/`, `/arena`, `/gear`, `/leaderboard`, `/comparison`
+- Legacy game preview routes (`/gear`, `/arena`, etc.) still exist but are not linked from the marketing site.
+- Native app lives in the repo root (`app/`, Expo).

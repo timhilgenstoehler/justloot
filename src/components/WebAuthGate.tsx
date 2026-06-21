@@ -1,37 +1,38 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
-import { DebugPanel } from './DebugPanel';
-import { useCloudSync } from '../hooks/useCloudSync';
-import { useAnalytics } from '../hooks/useAnalytics';
 import { colors } from '../constants/theme';
+import { useAnalytics } from '../hooks/useAnalytics';
+import { useCloudSync } from '../hooks/useCloudSync';
 import { useAuthStore } from '../store/authStore';
+import { DebugPanel } from './DebugPanel';
 import { LoginScreen } from './LoginScreen';
 import { RunSessionOverlays } from './RunSessionOverlays';
 
-interface AuthGateProps {
+interface WebAuthGateProps {
   children: ReactNode;
 }
 
-export function AuthGate({ children }: AuthGateProps) {
+/** Web-only auth shell — native app uses LoginModal on the profile tab. */
+export function WebAuthGate({ children }: WebAuthGateProps) {
   const session = useAuthStore((s) => s.session);
   const isDebugSession = useAuthStore((s) => s.isDebugSession);
   const initialized = useAuthStore((s) => s.initialized);
   const loading = useAuthStore((s) => s.loading);
-  const initialize = useAuthStore((s) => s.initialize);
-  const signOut = useAuthStore((s) => s.signOut);
-
+  const bootstrap = useAuthStore((s) => s.bootstrap);
+  const restoreSession = useAuthStore((s) => s.restoreSession);
   const [debugPanelOpen, setDebugPanelOpen] = useState(false);
 
   useCloudSync();
   useAnalytics(session?.user?.id);
 
   useEffect(() => {
-    initialize();
-  }, [initialize]);
+    bootstrap();
+    void restoreSession();
+  }, [bootstrap, restoreSession]);
 
   const authed = !!session || isDebugSession;
 
-  if (!initialized || (loading && !session && !isDebugSession)) {
+  if (!initialized) {
     return (
       <View style={styles.boot}>
         <ActivityIndicator color={colors.cta} size="large" />
@@ -39,25 +40,35 @@ export function AuthGate({ children }: AuthGateProps) {
     );
   }
 
-  if (!authed) {
-    return <LoginScreen />;
-  }
-
   return (
     <View style={styles.root}>
       {children}
-      <RunSessionOverlays />
-      {isDebugSession && (
+
+      {authed && (
         <>
-          <Pressable style={styles.debugBadge} onPress={() => setDebugPanelOpen(true)}>
-            <Text style={styles.debugBadgeText}>DEBUG</Text>
-          </Pressable>
-          <DebugPanel visible={debugPanelOpen} onClose={() => setDebugPanelOpen(false)} />
+          <RunSessionOverlays />
+          {isDebugSession && (
+            <>
+              <Pressable style={styles.debugBadge} onPress={() => setDebugPanelOpen(true)}>
+                <Text style={styles.debugBadgeText}>DEBUG</Text>
+              </Pressable>
+              <DebugPanel visible={debugPanelOpen} onClose={() => setDebugPanelOpen(false)} />
+            </>
+          )}
         </>
       )}
-      <Pressable style={styles.signOut} onPress={() => signOut()}>
-        <Text style={styles.signOutText}>{isDebugSession ? 'Exit Debug' : 'Sign Out'}</Text>
-      </Pressable>
+
+      {loading && authed && (
+        <View style={styles.loadingOverlay} pointerEvents="none">
+          <ActivityIndicator color={colors.cta} size="large" />
+        </View>
+      )}
+
+      {!authed && (
+        <View style={styles.loginOverlay}>
+          <LoginScreen />
+        </View>
+      )}
     </View>
   );
 }
@@ -73,6 +84,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.background,
+  },
+  loginOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: colors.background,
+    zIndex: 1000,
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 500,
   },
   debugBadge: {
     position: 'absolute',
@@ -91,18 +113,5 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#F59E0B',
     letterSpacing: 1.5,
-  },
-  signOut: {
-    position: 'absolute',
-    top: 8,
-    right: 12,
-    zIndex: 100,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  signOutText: {
-    fontSize: 11,
-    color: colors.textMuted,
-    letterSpacing: 0.5,
   },
 });

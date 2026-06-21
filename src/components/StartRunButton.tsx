@@ -10,7 +10,7 @@ interface StartRunButtonProps {
 export function StartRunButton({ onPress, disabled }: StartRunButtonProps) {
   return (
     <Pressable
-      style={({ pressed }) => [
+      style={({ pressed }: { pressed: boolean }) => [
         styles.button,
         pressed && styles.buttonPressed,
         disabled && styles.buttonDisabled,

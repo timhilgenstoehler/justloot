@@ -1,17 +1,15 @@
-import { useRouter } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LootPackCard } from '../src/components/LootPackCard';
-import { NavRow } from '../src/components/NavRow';
-import { LOOT_PACKS } from '../src/constants/lootPacks';
-import { getLootPack } from '../src/systems/lootPackSystem';
-import { colors } from '../src/constants/theme';
-import { gameAlert } from '../src/utils/gameAlert';
-import { INVENTORY_CAPACITY } from '../src/types/game';
-import { useGameStore } from '../src/store/gameStore';
+import { LootPackCard } from '../../src/components/LootPackCard';
+import { TabScreen, tabPanelStyle } from '../../src/components/TabScreen';
+import { LOOT_PACKS } from '../../src/constants/lootPacks';
+import { getLootPack } from '../../src/systems/lootPackSystem';
+import { colors } from '../../src/constants/theme';
+import { gameAlert } from '../../src/utils/gameAlert';
+import { INVENTORY_CAPACITY } from '../../src/types/game';
+import { useGameStore } from '../../src/store/gameStore';
 
 export default function CraftScreen() {
-  const router = useRouter();
   const dust = useGameStore((s) => s.dust);
   const depth = useGameStore((s) => s.depth);
   const inventoryCount = useGameStore((s) => s.inventory.length);
@@ -48,29 +46,26 @@ export default function CraftScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Pressable onPress={() => router.back()} style={styles.back}>
-        <Text style={styles.backText}>← Back</Text>
-      </Pressable>
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <TabScreen style={styles.tabScreen}>
+        <Text style={styles.dust}>{dust.toLocaleString()} Dust</Text>
+        <Text style={styles.hint}>Loot rolled at your max depth ({depth})</Text>
 
-      <Text style={styles.title}>Craft</Text>
-      <Text style={styles.dust}>{dust.toLocaleString()} Dust</Text>
-      <Text style={styles.hint}>Loot rolled at your max depth ({depth})</Text>
-
-      <NavRow />
-
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-        <Text style={styles.section}>Loot Packs</Text>
-        {LOOT_PACKS.map((pack) => (
-          <LootPackCard
-            key={pack.id}
-            pack={pack}
-            depth={depth}
-            dust={dust}
-            onPurchase={() => handlePurchase(pack.id, pack.name)}
-          />
-        ))}
-      </ScrollView>
+        <View style={tabPanelStyle.panel}>
+          <ScrollView style={tabPanelStyle.scroll} showsVerticalScrollIndicator={false}>
+          <Text style={styles.section}>Loot Packs</Text>
+          {LOOT_PACKS.map((pack) => (
+            <LootPackCard
+              key={pack.id}
+              pack={pack}
+              depth={depth}
+              dust={dust}
+              onPurchase={() => handlePurchase(pack.id, pack.name)}
+            />
+          ))}
+          </ScrollView>
+        </View>
+      </TabScreen>
     </SafeAreaView>
   );
 }
@@ -81,15 +76,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     paddingHorizontal: 24,
   },
-  back: { marginTop: 8, marginBottom: 8 },
-  backText: { color: colors.textMuted, fontSize: 14 },
-  title: {
-    fontSize: 14,
-    color: colors.textMuted,
-    letterSpacing: 3,
-    textTransform: 'uppercase',
-    textAlign: 'center',
-    marginBottom: 4,
+  tabScreen: {
+    flex: 1,
   },
   dust: {
     fontSize: 22,
@@ -97,6 +85,7 @@ const styles = StyleSheet.create({
     color: colors.cta,
     textAlign: 'center',
     letterSpacing: 1,
+    marginTop: 8,
     marginBottom: 4,
   },
   hint: {
@@ -105,7 +94,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 12,
   },
-  scroll: { flex: 1 },
   section: {
     fontSize: 10,
     color: colors.textMuted,

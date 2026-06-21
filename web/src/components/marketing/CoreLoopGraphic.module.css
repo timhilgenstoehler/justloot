@@ -1,0 +1,118 @@
+.wrap {
+  position: relative;
+  width: min(320px, 90vw);
+  margin: 0 auto;
+  aspect-ratio: 1;
+}
+
+.ring {
+  position: absolute;
+  inset: 8%;
+  border: 1px dashed rgba(201, 162, 39, 0.25);
+  border-radius: 50%;
+  animation: spin 24s linear infinite;
+}
+
+.orbit {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+  background: #c9a227;
+  border-radius: 50%;
+  box-shadow: 0 0 16px rgba(201, 162, 39, 0.8);
+  animation: orbit 8s linear infinite;
+  transform-origin: 0 0;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes orbit {
+  from {
+    transform: rotate(0deg) translateX(130px) rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg) translateX(130px) rotate(-360deg);
+  }
+}
+
+.steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  position: absolute;
+  inset: 0;
+}
+
+.step {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: rotate(calc(var(--i) * 72deg)) translateY(-118px) rotate(calc(var(--i) * -72deg));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100px;
+  margin-left: -50px;
+  margin-top: -28px;
+  animation: stepPulse 8s ease-in-out infinite;
+  animation-delay: calc(var(--i) * -1.6s);
+}
+
+@keyframes stepPulse {
+  0%,
+  15%,
+  100% {
+    opacity: 0.45;
+  }
+  5% {
+    opacity: 1;
+  }
+}
+
+.num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid rgba(201, 162, 39, 0.5);
+  background: #0b0b0f;
+  color: #c9a227;
+  font-size: 12px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #e8e6e3;
+  text-align: center;
+  line-height: 1.25;
+  letter-spacing: 0.3px;
+}
+
+@media (max-width: 480px) {
+  .step {
+    transform: rotate(calc(var(--i) * 72deg)) translateY(-100px) rotate(calc(var(--i) * -72deg));
+    width: 84px;
+    margin-left: -42px;
+  }
+
+  @keyframes orbit {
+    from {
+      transform: rotate(0deg) translateX(108px) rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg) translateX(108px) rotate(-360deg);
+    }
+  }
+}

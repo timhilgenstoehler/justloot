@@ -187,7 +187,7 @@ export function LootRevealFlow() {
 
       {phase === 'compare' && (
         <Pressable
-          style={({ pressed }) => [styles.continueButton, pressed && styles.buttonPressed]}
+          style={({ pressed }: { pressed: boolean }) => [styles.continueButton, pressed && styles.buttonPressed]}
           onPress={() => setPhase('actions')}
         >
           <Text style={styles.continueText}>Continue</Text>
@@ -200,7 +200,7 @@ export function LootRevealFlow() {
             dualSlots.map((slot, index) => (
               <Pressable
                 key={slot}
-                style={({ pressed }) => [
+                style={({ pressed }: { pressed: boolean }) => [
                   styles.equipButton,
                   index < dualSlots.length - 1 && styles.equipButtonBorder,
                   pressed && styles.buttonPressed,
@@ -212,20 +212,20 @@ export function LootRevealFlow() {
             ))
           ) : (
             <Pressable
-              style={({ pressed }) => [styles.equipButton, pressed && styles.buttonPressed]}
+              style={({ pressed }: { pressed: boolean }) => [styles.equipButton, pressed && styles.buttonPressed]}
               onPress={handleEquip}
             >
               <Text style={styles.equipText}>Equip</Text>
             </Pressable>
           )}
           <Pressable
-            style={({ pressed }) => [styles.salvageButton, pressed && styles.buttonPressed]}
+            style={({ pressed }: { pressed: boolean }) => [styles.salvageButton, pressed && styles.buttonPressed]}
             onPress={handleSalvage}
           >
             <Text style={styles.salvageText}>Salvage</Text>
           </Pressable>
           <Pressable
-            style={({ pressed }) => [styles.keepButton, pressed && styles.buttonPressed]}
+            style={({ pressed }: { pressed: boolean }) => [styles.keepButton, pressed && styles.buttonPressed]}
             onPress={handleKeep}
           >
             <Text style={styles.keepText}>Keep</Text>
@@ -248,8 +248,6 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     width: '100%',
     maxWidth: 340,
-    borderWidth: 1,
-    borderColor: '#3A3A45',
     maxHeight: '72%',
     overflow: 'hidden',
   },
@@ -279,8 +277,6 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 340,
     marginTop: 12,
-    borderWidth: 1,
-    borderColor: colors.surfaceBorder,
     borderRadius: 4,
     overflow: 'hidden',
   },
