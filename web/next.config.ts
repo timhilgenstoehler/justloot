@@ -11,7 +11,7 @@ const nextConfig: NextConfig = {
   typescript: { ignoreBuildErrors: true },
   outputFileTracingRoot: path.join(__dirname, '..'),
   serverExternalPackages: ['@supabase/supabase-js'],
-  transpilePackages: ['react-native-web'],
+  transpilePackages: ['react-native-web', 'react-native-svg'],
   webpack: (config, { isServer }) => {
     config.resolve.modules = [
       webNodeModules,
