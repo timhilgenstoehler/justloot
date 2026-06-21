@@ -45,5 +45,5 @@ npx vercel
 
 ## Notes
 
-- Legacy game preview routes (`/gear`, `/arena`, etc.) still exist but are not linked from the marketing site.
+- Marketing-only Next.js app — no Expo / React Native code in the bundle.
 - Native app lives in the repo root (`app/`, Expo).
