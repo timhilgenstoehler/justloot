@@ -7,16 +7,6 @@ export function SiteHeader() {
       <Link href="/" className={styles.logo}>
         JUST LOOT
       </Link>
-      <nav className={styles.nav} aria-label="Main">
-        <Link href="/play" className={styles.playButton}>
-          Play on Web
-        </Link>
-        <a href="#loop">Loop</a>
-        <a href="#loot">Loot</a>
-        <a href="#arena">Arena</a>
-        <Link href="/support">Support</Link>
-        <Link href="/privacy">Privacy</Link>
-      </nav>
     </header>
   );
 }
