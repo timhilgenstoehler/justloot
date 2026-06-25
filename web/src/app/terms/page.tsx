@@ -71,6 +71,39 @@ export default function TermsPage() {
         </section>
 
         <section>
+          <h2>Just Loot Plus</h2>
+          <p>
+            Just Loot Plus is an optional paid subscription that unlocks premium quality-of-life
+            features in the App. Free players can enjoy the full core game; Plus is for players
+            who want extra convenience and flexibility.
+          </p>
+          <p>Just Loot Plus currently includes:</p>
+          <ul>
+            <li>
+              <strong>3 loadouts</strong> — save and switch between multiple gear setups
+              without re-equipping manually each time.
+            </li>
+            <li>
+              <strong>Auto salvage options</strong> — configure rules to automatically salvage
+              unwanted loot based on your preferences.
+            </li>
+            <li>
+              <strong>Future Plus features</strong> — new premium quality-of-life features we add
+              to Just Loot Plus are included in your subscription at no extra charge.
+            </li>
+          </ul>
+          <p>
+            We may add, change, or remove individual Plus features over time as we improve the
+            game, but subscribers will continue to receive the Plus feature set available at the
+            time of their active subscription. Pricing, billing period, and cancellation are
+            handled through the App Store or Google Play (or other platform where you subscribed).
+            Subscriptions renew automatically unless you cancel before the renewal date in your
+            platform account settings. Refunds are subject to the policies of the store where you
+            purchased Plus.
+          </p>
+        </section>
+
+        <section>
           <h2>Intellectual property</h2>
           <p>
             Just Loot, including its name, artwork, code, and game content, is owned by us or
