@@ -12,6 +12,7 @@ export function SiteFooter() {
       <nav className={styles.links} aria-label="Footer">
         <Link href="/support">Support</Link>
         <Link href="/privacy">Privacy</Link>
+        <Link href="/terms">Terms</Link>
         <a href={`mailto:${siteConfig.supportEmail}`}>Contact</a>
       </nav>
       <p className={styles.copy}>
