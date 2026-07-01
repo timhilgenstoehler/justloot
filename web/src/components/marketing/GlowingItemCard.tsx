@@ -58,7 +58,7 @@ export function GlowingItemCard() {
     }
 
     let i = 0;
-    let timer: ReturnType<typeof setTimeout>;
+    let timer: number | undefined;
     setStep('locked');
 
     const advance = () => {

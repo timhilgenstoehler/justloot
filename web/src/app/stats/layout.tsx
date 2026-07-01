@@ -6,5 +6,5 @@ export const metadata: Metadata = {
 };
 
 export default function StatsLayout({ children }: { children: React.ReactNode }) {
-  return children;
+  return <div className="stats-shell">{children}</div>;
 }

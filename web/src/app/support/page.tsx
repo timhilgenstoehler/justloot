@@ -40,10 +40,13 @@ export default function SupportPage() {
               </dd>
             </div>
             <div>
-              <dt>When is the app available?</dt>
+              <dt>Where can I download the app?</dt>
               <dd>
-                Just Loot is coming soon to the App Store and Google Play. Check back here
-                or email us to get notified at launch.
+                Just Loot is available on the{' '}
+                <a href={siteConfig.appStoreUrl} target="_blank" rel="noopener noreferrer">
+                  App Store
+                </a>
+                . Google Play is coming soon.
               </dd>
             </div>
             <div>
